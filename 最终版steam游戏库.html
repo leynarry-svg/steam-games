@@ -1,0 +1,3095 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Leynarry Steam Game Library</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:linear-gradient(135deg,#1a1a2e 0%,#16213e 50%,#0f3460 100%);color:#c9d1d9;font-family:'Segoe UI','Microsoft YaHei',sans-serif;min-height:100vh;line-height:1.6}
+.header{text-align:center;padding:40px 20px 20px;background:linear-gradient(180deg,rgba(15,52,96,0.8),transparent)}
+.header h1{font-size:2.5em;background:linear-gradient(90deg,#00d2ff,#a371f7,#f778ba);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:8px}
+.header .sub{color:#8b949e;font-size:0.95em}
+
+/* Stats Grid */
+.stats-grid{display:flex;justify-content:center;gap:16px;flex-wrap:wrap;margin:20px 0;padding:0 20px}
+.stat-card{background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:14px;padding:16px 22px;text-align:center;cursor:pointer;transition:all .25s;user-select:none;position:relative}
+.stat-card:hover{transform:translateY(-3px);border-color:rgba(0,210,255,0.5);box-shadow:0 6px 24px rgba(0,210,255,0.15);background:rgba(0,210,255,0.08)}
+.stat-card.active{border-color:#00d2ff;background:rgba(0,210,255,0.12);box-shadow:0 0 20px rgba(0,210,255,0.3)}
+.stat-card .num{font-size:2em;font-weight:800;background:linear-gradient(135deg,#00d2ff,#a371f7);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.stat-card .label{color:#8b949e;font-size:0.8em;margin-top:2px}
+.stat-card .hint{color:#484f58;font-size:0.65em;margin-top:1px}
+
+/* Active filter bar */
+.filter-bar{display:none;text-align:center;padding:8px 20px;background:rgba(0,210,255,0.08)}
+.filter-bar.show{display:block}
+.filter-bar span{color:#00d2ff;font-weight:600}
+.filter-bar button{background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);color:#c9d1d9;padding:6px 16px;border-radius:16px;cursor:pointer;margin-left:10px;font-size:0.82em;transition:.2s}
+.filter-bar button:hover{background:rgba(255,100,100,0.2);border-color:#f778ba}
+
+/* Search */
+.search-box{text-align:center;margin:16px 0}
+.search-box input{width:300px;padding:12px 20px;border-radius:24px;border:1px solid rgba(255,255,255,0.15);background:rgba(255,255,255,0.05);color:#fff;font-size:1em;outline:none;transition:.3s}
+.search-box input:focus{border-color:#00d2ff;box-shadow:0 0 15px rgba(0,210,255,0.25);width:380px}
+
+/* Result count */
+.result-count{text-align:center;color:#8b949e;font-size:0.82em;margin:4px 0}
+
+/* Table */
+.table-container{max-width:98%;margin:10px auto 40px;overflow-x:auto;padding:0 16px}
+table{width:100%;border-collapse:separate;border-spacing:0;font-size:0.87em;border-radius:12px;overflow:hidden;box-shadow:0 10px 40px rgba(0,0,0,0.4)}
+thead th{background:linear-gradient(180deg,#1a3a5c,#0f2844);color:#fff;font-weight:600;padding:12px 8px;position:sticky;top:0;z-index:10;white-space:nowrap;border-bottom:2px solid #00d2ff;font-size:0.82em;letter-spacing:.5px}
+tbody td{padding:9px 8px;border-bottom:1px solid rgba(255,255,255,0.04);vertical-align:middle}
+tbody tr{transition:all .2s}
+tbody tr:hover{background:rgba(0,210,255,0.06)}
+tbody tr:nth-child(even){background:rgba(255,255,255,0.015)}
+tbody tr:nth-child(even):hover{background:rgba(0,210,255,0.06)}
+
+/* Steam link */
+.steam-link{color:#e6edf3;text-decoration:none;font-weight:600;transition:.2s;display:inline-block}
+.steam-link:hover{color:#00d2ff;text-decoration:underline}
+.steam-link::after{content:' ';opacity:0;font-size:0.7em;transition:.2s;color:#00d2ff}
+.steam-link:hover::after{content:'';opacity:1}
+
+/* Column styles */
+.col-name{min-width:200px}
+.col-genre{color:#ffa07a;font-size:0.78em;white-space:nowrap}
+.col-gameplay{color:#b0c4de;max-width:340px;font-size:0.8em}
+.col-rating{text-align:center;font-weight:600}
+.col-fun{text-align:center;font-size:0.82em}
+.col-size{text-align:center;color:#87ceeb;white-space:nowrap}
+.col-online{text-align:center;font-size:0.78em}
+.col-platform{text-align:center;font-size:0.76em;white-space:nowrap}
+.col-art{color:#deb887;font-size:0.78em;white-space:nowrap}
+.col-diff{text-align:center;font-weight:600}
+
+/* Tags */
+.tag{display:inline-block;padding:2px 8px;border-radius:10px;font-size:0.72em;margin:1px}
+.tag-online{background:rgba(0,210,255,0.18);color:#00d2ff}
+.tag-offline{background:rgba(255,255,255,0.04);color:#666}
+.tag-win{background:rgba(76,175,80,0.15);color:#4caf50}
+.tag-mac{background:rgba(255,255,255,0.08);color:#bbb}
+.tag-linux{background:rgba(255,165,0,0.15);color:#ffa500}
+
+.diff-easy{color:#4caf50}
+.diff-medium{color:#ffeb3b}
+.diff-hard{color:#ff9800}
+.diff-extreme{color:#f44336}
+.rating-high{color:#4caf50}
+.rating-mid{color:#ffeb3b}
+
+.footer{text-align:center;padding:40px 20px;color:#484f58;font-size:0.82em}
+
+::-webkit-scrollbar{width:6px;height:6px}
+::-webkit-scrollbar-track{background:rgba(0,0,0,0.2)}
+::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.12);border-radius:3px}
+</style>
+</head>
+<body>
+
+<div class="header">
+<h1>Leynarry  Steam 游戏库</h1>
+<p class="sub">223 个游戏 | 含家庭共享 | 点击数据卡片筛选 | 点击游戏名跳转 Steam</p>
+<div class="stats-grid">
+<div class="stat-card" data-filter="all" onclick="filterBy('all', this)" title="显示全部">
+<div class="num">223</div><div class="label">全部游戏</div><div class="hint">点击显示全部</div>
+</div>
+<div class="stat-card" data-filter="online" onclick="filterBy('online', this)" title="筛选支持联机的游戏">
+<div class="num">71</div><div class="label">联机游戏</div><div class="hint">点击筛选</div>
+</div>
+<div class="stat-card" data-filter="mac" onclick="filterBy('mac', this)" title="筛选支持 Mac 的游戏">
+<div class="num">129</div><div class="label">支持 Mac</div><div class="hint">点击筛选</div>
+</div>
+<div class="stat-card" data-filter="linux" onclick="filterBy('linux', this)" title="筛选支持 Linux 的游戏">
+<div class="num">41</div><div class="label">支持 Linux</div><div class="hint">点击筛选</div>
+</div>
+<div class="stat-card" data-filter="r90" onclick="filterBy('r90', this)" title="筛选评分 90% 以上的游戏">
+<div class="num">138</div><div class="label">评分 90%+</div><div class="hint">点击筛选</div>
+</div>
+<div class="stat-card" data-filter="hard" onclick="filterBy('hard', this)" title="筛选极难游戏">
+<div class="num">17</div><div class="label">极难游戏</div><div class="hint">点击筛选</div>
+</div>
+<div class="stat-card" data-filter="easy" onclick="filterBy('easy', this)" title="筛选休闲简单游戏">
+<div class="num">48</div><div class="label">休闲游戏</div><div class="hint">点击筛选</div>
+</div>
+</div>
+<div class="filter-bar" id="filterBar">
+当前筛选：<span id="filterLabel">全部</span>
+<button onclick="filterBy('all')"> 清除 显示全部</button>
+</div>
+</div>
+
+<div class="search-box">
+<input type="text" id="search" placeholder="搜索游戏名、类型、玩法..." oninput="applyAllFilters()">
+</div>
+
+<div class="result-count" id="resultCount">共显示 <strong>223</strong> 个游戏</div>
+
+<div class="table-container">
+<table id="gameTable">
+<thead>
+<tr><th>#</th><th>游戏名称<br><small style="color:#8b949e">点击跳转 Steam</small></th><th>类型</th><th>玩法</th><th>评分</th><th>推荐</th><th>存储(GB)</th><th>联机</th><th>平台</th><th>画风</th><th>难度</th></tr>
+</thead>
+<tbody>
+<tr data-online="0" data-mac="0" data-linux="0" data-r90="0" data-hard="0" data-easy="0">
+    <td style="text-align:center;color:#666;">1</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=12%20is%20Better%20Than%206" target="_blank" title="在 Steam 商店中打开" class="steam-link">12 is Better Than 6</a></td>
+    <td class="col-genre">射击/动作</td>
+    <td class="col-gameplay">手绘西部俯视射击，扮演墨西哥枪手</td>
+    <td class="col-rating rating-high">88%</td>
+    <td class="col-fun">★★★★</td>
+    <td class="col-size">0.2</td>
+    <td class="col-online"><span class="tag tag-offline">单人</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span></td>
+    <td class="col-art">手绘速写</td>
+    <td class="col-diff diff-medium">中等</td>
+</tr>
+<tr data-online="0" data-mac="1" data-linux="0" data-r90="1" data-hard="0" data-easy="0">
+    <td style="text-align:center;color:#666;">2</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=7%20Billion%20Humans" target="_blank" title="在 Steam 商店中打开" class="steam-link">7 Billion Humans</a></td>
+    <td class="col-genre">解谜/编程</td>
+    <td class="col-gameplay">可视化编程控制角色完成工作任务</td>
+    <td class="col-rating rating-high">95%</td>
+    <td class="col-fun">★★★★★</td>
+    <td class="col-size">0.3</td>
+    <td class="col-online"><span class="tag tag-offline">单人</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span> <span class="tag tag-mac">Mac</span></td>
+    <td class="col-art">极简卡通</td>
+    <td class="col-diff diff-hard">偏难</td>
+</tr>
+<tr data-online="0" data-mac="1" data-linux="0" data-r90="1" data-hard="1" data-easy="0">
+    <td style="text-align:center;color:#666;">3</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=A%20Dance%20of%20Fire%20and%20Ice" target="_blank" title="在 Steam 商店中打开" class="steam-link">A Dance of Fire and Ice</a></td>
+    <td class="col-genre">节奏/音游</td>
+    <td class="col-gameplay">单按键跟随音乐节拍在两个轨道间旋转</td>
+    <td class="col-rating rating-high">97%</td>
+    <td class="col-fun">★★★★★</td>
+    <td class="col-size">0.5</td>
+    <td class="col-online"><span class="tag tag-offline">单人</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span> <span class="tag tag-mac">Mac</span></td>
+    <td class="col-art">极简几何</td>
+    <td class="col-diff diff-extreme">极难</td>
+</tr>
+<tr data-online="0" data-mac="1" data-linux="0" data-r90="1" data-hard="0" data-easy="1">
+    <td style="text-align:center;color:#666;">4</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=A%20Little%20to%20the%20Left" target="_blank" title="在 Steam 商店中打开" class="steam-link">A Little to the Left</a></td>
+    <td class="col-genre">解谜/休闲</td>
+    <td class="col-gameplay">整理日常物品的温暖治愈整理游戏</td>
+    <td class="col-rating rating-high">93%</td>
+    <td class="col-fun">★★★★</td>
+    <td class="col-size">0.5</td>
+    <td class="col-online"><span class="tag tag-offline">单人</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span> <span class="tag tag-mac">Mac</span></td>
+    <td class="col-art">温馨手绘</td>
+    <td class="col-diff diff-easy">简单</td>
+</tr>
+<tr data-online="0" data-mac="1" data-linux="0" data-r90="1" data-hard="0" data-easy="0">
+    <td style="text-align:center;color:#666;">5</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=A%3DB" target="_blank" title="在 Steam 商店中打开" class="steam-link">A=B</a></td>
+    <td class="col-genre">编程/解谜</td>
+    <td class="col-gameplay">用极简语言A=B解决逻辑谜题</td>
+    <td class="col-rating rating-high">94%</td>
+    <td class="col-fun">★★★★</td>
+    <td class="col-size">0.1</td>
+    <td class="col-online"><span class="tag tag-offline">单人</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span> <span class="tag tag-mac">Mac</span></td>
+    <td class="col-art">极简文本</td>
+    <td class="col-diff diff-hard">困难</td>
+</tr>
+<tr data-online="0" data-mac="0" data-linux="0" data-r90="0" data-hard="0" data-easy="0">
+    <td style="text-align:center;color:#666;">6</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=Achievement%20Simulator" target="_blank" title="在 Steam 商店中打开" class="steam-link">Achievement Simulator</a></td>
+    <td class="col-genre">模拟/休闲</td>
+    <td class="col-gameplay">模拟获得游戏成就的快感</td>
+    <td class="col-rating rating-mid">75%</td>
+    <td class="col-fun">★★★</td>
+    <td class="col-size">0.1</td>
+    <td class="col-online"><span class="tag tag-offline">单人</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span></td>
+    <td class="col-art">极简</td>
+    <td class="col-diff diff-easy">极简单</td>
+</tr>
+<tr data-online="0" data-mac="0" data-linux="0" data-r90="0" data-hard="0" data-easy="0">
+    <td style="text-align:center;color:#666;">7</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=Alchemia" target="_blank" title="在 Steam 商店中打开" class="steam-link">Alchemia</a></td>
+    <td class="col-genre">解谜/冒险</td>
+    <td class="col-gameplay">炼金术主题的点击冒险解谜</td>
+    <td class="col-rating rating-high">85%</td>
+    <td class="col-fun">★★★</td>
+    <td class="col-size">0.3</td>
+    <td class="col-online"><span class="tag tag-offline">单人</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span></td>
+    <td class="col-art">手绘</td>
+    <td class="col-diff diff-medium">中等</td>
+</tr>
+<tr data-online="1" data-mac="0" data-linux="0" data-r90="0" data-hard="0" data-easy="0">
+    <td style="text-align:center;color:#666;">8</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=ARK%3A%20Survival%20Evolved" target="_blank" title="在 Steam 商店中打开" class="steam-link">ARK: Survival Evolved</a></td>
+    <td class="col-genre">生存/沙盒</td>
+    <td class="col-gameplay">恐龙主题开放世界生存建造驯服</td>
+    <td class="col-rating rating-mid">77%</td>
+    <td class="col-fun">★★★★</td>
+    <td class="col-size">100+</td>
+    <td class="col-online"><span class="tag tag-online">支持</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span></td>
+    <td class="col-art">写实3D</td>
+    <td class="col-diff diff-hard">困难</td>
+</tr>
+<tr data-online="1" data-mac="0" data-linux="0" data-r90="0" data-hard="0" data-easy="0">
+    <td style="text-align:center;color:#666;">9</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=ARK%3A%20Survival%20Of%20The%20Fittest" target="_blank" title="在 Steam 商店中打开" class="steam-link">ARK: Survival Of The Fittest</a></td>
+    <td class="col-genre">大逃杀/生存</td>
+    <td class="col-gameplay">ARK世界观大逃杀模式</td>
+    <td class="col-rating rating-mid">70%</td>
+    <td class="col-fun">★★★</td>
+    <td class="col-size">40</td>
+    <td class="col-online"><span class="tag tag-online">支持</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span></td>
+    <td class="col-art">写实3D</td>
+    <td class="col-diff diff-hard">困难</td>
+</tr>
+<tr data-online="0" data-mac="1" data-linux="0" data-r90="1" data-hard="1" data-easy="0">
+    <td style="text-align:center;color:#666;">10</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=Baba%20Is%20You" target="_blank" title="在 Steam 商店中打开" class="steam-link">Baba Is You</a></td>
+    <td class="col-genre">解谜/逻辑</td>
+    <td class="col-gameplay">推动单词块改变规则来解谜</td>
+    <td class="col-rating rating-high">98%</td>
+    <td class="col-fun">★★★★★</td>
+    <td class="col-size">0.1</td>
+    <td class="col-online"><span class="tag tag-offline">单人</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span> <span class="tag tag-mac">Mac</span></td>
+    <td class="col-art">像素极简</td>
+    <td class="col-diff diff-extreme">极难</td>
+</tr>
+<tr data-online="0" data-mac="1" data-linux="0" data-r90="1" data-hard="0" data-easy="0">
+    <td style="text-align:center;color:#666;">11</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=Balatro" target="_blank" title="在 Steam 商店中打开" class="steam-link">Balatro</a></td>
+    <td class="col-genre">卡牌/Roguelike</td>
+    <td class="col-gameplay">扑克牌牌组构建Roguelike神作</td>
+    <td class="col-rating rating-high">97%</td>
+    <td class="col-fun">★★★★★</td>
+    <td class="col-size">0.2</td>
+    <td class="col-online"><span class="tag tag-offline">单人</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span> <span class="tag tag-mac">Mac</span></td>
+    <td class="col-art">像素复古</td>
+    <td class="col-diff diff-medium">中等</td>
+</tr>
+<tr data-online="1" data-mac="1" data-linux="0" data-r90="1" data-hard="0" data-easy="0">
+    <td style="text-align:center;color:#666;">12</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=BattleBlock%20Theater" target="_blank" title="在 Steam 商店中打开" class="steam-link">BattleBlock Theater</a></td>
+    <td class="col-genre">平台/动作</td>
+    <td class="col-gameplay">合作平台闯关被诅咒的剧场冒险</td>
+    <td class="col-rating rating-high">97%</td>
+    <td class="col-fun">★★★★★</td>
+    <td class="col-size">2</td>
+    <td class="col-online"><span class="tag tag-online">合作</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span> <span class="tag tag-mac">Mac</span></td>
+    <td class="col-art">卡通手绘</td>
+    <td class="col-diff diff-medium">中等</td>
+</tr>
+<tr data-online="0" data-mac="1" data-linux="0" data-r90="1" data-hard="0" data-easy="0">
+    <td style="text-align:center;color:#666;">13</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=Beholder" target="_blank" title="在 Steam 商店中打开" class="steam-link">Beholder</a></td>
+    <td class="col-genre">冒险/策略</td>
+    <td class="col-gameplay">扮演监管员监控公寓居民的道德困境</td>
+    <td class="col-rating rating-high">91%</td>
+    <td class="col-fun">★★★★</td>
+    <td class="col-size">0.3</td>
+    <td class="col-online"><span class="tag tag-offline">单人</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span> <span class="tag tag-mac">Mac</span></td>
+    <td class="col-art">暗黑手绘</td>
+    <td class="col-diff diff-medium">中等</td>
+</tr>
+<tr data-online="0" data-mac="1" data-linux="0" data-r90="1" data-hard="0" data-easy="0">
+    <td style="text-align:center;color:#666;">14</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=Beholder%202" target="_blank" title="在 Steam 商店中打开" class="steam-link">Beholder 2</a></td>
+    <td class="col-genre">冒险/策略</td>
+    <td class="col-gameplay">续作扮演政府部门底层公务员</td>
+    <td class="col-rating rating-high">90%</td>
+    <td class="col-fun">★★★★</td>
+    <td class="col-size">3</td>
+    <td class="col-online"><span class="tag tag-offline">单人</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span> <span class="tag tag-mac">Mac</span></td>
+    <td class="col-art">暗黑手绘</td>
+    <td class="col-diff diff-medium">中等</td>
+</tr>
+<tr data-online="1" data-mac="1" data-linux="1" data-r90="1" data-hard="0" data-easy="0">
+    <td style="text-align:center;color:#666;">15</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=Besiege" target="_blank" title="在 Steam 商店中打开" class="steam-link">Besiege (围攻)</a></td>
+    <td class="col-genre">沙盒/物理</td>
+    <td class="col-gameplay">中世纪攻城器械物理建造模拟</td>
+    <td class="col-rating rating-high">94%</td>
+    <td class="col-fun">★★★★★</td>
+    <td class="col-size">1</td>
+    <td class="col-online"><span class="tag tag-online">在线</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span> <span class="tag tag-mac">Mac</span> <span class="tag tag-linux">Linux</span></td>
+    <td class="col-art">低多边形</td>
+    <td class="col-diff diff-hard">中等偏难</td>
+</tr>
+<tr data-online="1" data-mac="0" data-linux="0" data-r90="0" data-hard="0" data-easy="0">
+    <td style="text-align:center;color:#666;">16</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=Blood%3A%20Fresh%20Supply" target="_blank" title="在 Steam 商店中打开" class="steam-link">Blood: Fresh Supply</a></td>
+    <td class="col-genre">FPS/经典</td>
+    <td class="col-gameplay">经典FPS复刻快节奏暴力射击</td>
+    <td class="col-rating rating-high">88%</td>
+    <td class="col-fun">★★★★</td>
+    <td class="col-size">1</td>
+    <td class="col-online"><span class="tag tag-online">支持</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span></td>
+    <td class="col-art">复古像素3D</td>
+    <td class="col-diff diff-hard">困难</td>
+</tr>
+<tr data-online="1" data-mac="1" data-linux="0" data-r90="1" data-hard="0" data-easy="1">
+    <td style="text-align:center;color:#666;">17</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=Bloons%20TD%206" target="_blank" title="在 Steam 商店中打开" class="steam-link">Bloons TD 6</a></td>
+    <td class="col-genre">塔防/策略</td>
+    <td class="col-gameplay">猴子气球塔防经典系列第六代</td>
+    <td class="col-rating rating-high">97%</td>
+    <td class="col-fun">★★★★★</td>
+    <td class="col-size">1.5</td>
+    <td class="col-online"><span class="tag tag-online">合作</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span> <span class="tag tag-mac">Mac</span></td>
+    <td class="col-art">卡通可爱</td>
+    <td class="col-diff diff-easy">简单</td>
+</tr>
+<tr data-online="1" data-mac="1" data-linux="0" data-r90="0" data-hard="0" data-easy="0">
+    <td style="text-align:center;color:#666;">18</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=Brawlhalla" target="_blank" title="在 Steam 商店中打开" class="steam-link">Brawlhalla</a></td>
+    <td class="col-genre">格斗/对战</td>
+    <td class="col-gameplay">免费平台格斗类似任天堂大乱斗</td>
+    <td class="col-rating rating-high">89%</td>
+    <td class="col-fun">★★★★</td>
+    <td class="col-size">1</td>
+    <td class="col-online"><span class="tag tag-online">在线</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span> <span class="tag tag-mac">Mac</span></td>
+    <td class="col-art">卡通动漫</td>
+    <td class="col-diff diff-medium">中等</td>
+</tr>
+<tr data-online="0" data-mac="0" data-linux="0" data-r90="0" data-hard="0" data-easy="1">
+    <td style="text-align:center;color:#666;">19</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=Brewmaster%20ASEAN" target="_blank" title="在 Steam 商店中打开" class="steam-link">Brewmaster ASEAN</a></td>
+    <td class="col-genre">模拟/休闲</td>
+    <td class="col-gameplay">啤酒酿造模拟经营</td>
+    <td class="col-rating rating-mid">80%</td>
+    <td class="col-fun">★★★</td>
+    <td class="col-size">2</td>
+    <td class="col-online"><span class="tag tag-offline">单人</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span></td>
+    <td class="col-art">写实3D</td>
+    <td class="col-diff diff-easy">简单</td>
+</tr>
+<tr data-online="0" data-mac="0" data-linux="0" data-r90="1" data-hard="0" data-easy="0">
+    <td style="text-align:center;color:#666;">20</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=Brotato" target="_blank" title="在 Steam 商店中打开" class="steam-link">Brotato</a></td>
+    <td class="col-genre">动作/Roguelike</td>
+    <td class="col-gameplay">土豆战士俯视射击生存游戏</td>
+    <td class="col-rating rating-high">97%</td>
+    <td class="col-fun">★★★★★</td>
+    <td class="col-size">0.2</td>
+    <td class="col-online"><span class="tag tag-offline">单人</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span></td>
+    <td class="col-art">像素</td>
+    <td class="col-diff diff-medium">中等</td>
+</tr>
+<tr data-online="0" data-mac="1" data-linux="0" data-r90="1" data-hard="0" data-easy="0">
+    <td style="text-align:center;color:#666;">21</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=Card%20Shark" target="_blank" title="在 Steam 商店中打开" class="steam-link">Card Shark</a></td>
+    <td class="col-genre">冒险/策略</td>
+    <td class="col-gameplay">18世纪法国靠出千诈赌的独特游戏</td>
+    <td class="col-rating rating-high">93%</td>
+    <td class="col-fun">★★★★</td>
+    <td class="col-size">2</td>
+    <td class="col-online"><span class="tag tag-offline">单人</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span> <span class="tag tag-mac">Mac</span></td>
+    <td class="col-art">油画手绘</td>
+    <td class="col-diff diff-medium">中等</td>
+</tr>
+<tr data-online="0" data-mac="1" data-linux="1" data-r90="1" data-hard="1" data-easy="0">
+    <td style="text-align:center;color:#666;">22</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=Celeste" target="_blank" title="在 Steam 商店中打开" class="steam-link">Celeste</a></td>
+    <td class="col-genre">平台/动作</td>
+    <td class="col-gameplay">登山少女硬核平台跳跃感人故事</td>
+    <td class="col-rating rating-high">97%</td>
+    <td class="col-fun">★★★★★</td>
+    <td class="col-size">1.2</td>
+    <td class="col-online"><span class="tag tag-offline">单人</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span> <span class="tag tag-mac">Mac</span> <span class="tag tag-linux">Linux</span></td>
+    <td class="col-art">像素精美</td>
+    <td class="col-diff diff-extreme">极难</td>
+</tr>
+<tr data-online="1" data-mac="0" data-linux="0" data-r90="0" data-hard="0" data-easy="0">
+    <td style="text-align:center;color:#666;">23</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=Chained%20Together" target="_blank" title="在 Steam 商店中打开" class="steam-link">Chained Together</a></td>
+    <td class="col-genre">合作/动作</td>
+    <td class="col-gameplay">被链条拴在一起的合作攀爬游戏</td>
+    <td class="col-rating rating-high">88%</td>
+    <td class="col-fun">★★★★</td>
+    <td class="col-size">5</td>
+    <td class="col-online"><span class="tag tag-online">合作</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span></td>
+    <td class="col-art">3D写实</td>
+    <td class="col-diff diff-hard">中等偏难</td>
+</tr>
+<tr data-online="0" data-mac="1" data-linux="0" data-r90="1" data-hard="0" data-easy="0">
+    <td style="text-align:center;color:#666;">24</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=Cookie%20Clicker" target="_blank" title="在 Steam 商店中打开" class="steam-link">Cookie Clicker</a></td>
+    <td class="col-genre">放置/休闲</td>
+    <td class="col-gameplay">经典网页挂机点击制作饼干</td>
+    <td class="col-rating rating-high">96%</td>
+    <td class="col-fun">★★★★</td>
+    <td class="col-size">0.1</td>
+    <td class="col-online"><span class="tag tag-offline">单人</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span> <span class="tag tag-mac">Mac</span></td>
+    <td class="col-art">极简界面</td>
+    <td class="col-diff diff-easy">极简单</td>
+</tr>
+<tr data-online="1" data-mac="1" data-linux="0" data-r90="1" data-hard="0" data-easy="0">
+    <td style="text-align:center;color:#666;">25</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=Counter-Strike" target="_blank" title="在 Steam 商店中打开" class="steam-link">Counter-Strike</a></td>
+    <td class="col-genre">FPS/竞技</td>
+    <td class="col-gameplay">经典CS 1.6</td>
+    <td class="col-rating rating-high">95%</td>
+    <td class="col-fun">★★★★</td>
+    <td class="col-size">4</td>
+    <td class="col-online"><span class="tag tag-online">在线</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span> <span class="tag tag-mac">Mac</span></td>
+    <td class="col-art">写实</td>
+    <td class="col-diff diff-hard">困难</td>
+</tr>
+<tr data-online="1" data-mac="0" data-linux="0" data-r90="0" data-hard="1" data-easy="0">
+    <td style="text-align:center;color:#666;">26</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=Counter-Strike%202" target="_blank" title="在 Steam 商店中打开" class="steam-link">Counter-Strike 2</a></td>
+    <td class="col-genre">FPS/竞技</td>
+    <td class="col-gameplay">CS最新Source 2引擎版本</td>
+    <td class="col-rating rating-high">85%</td>
+    <td class="col-fun">★★★★★</td>
+    <td class="col-size">35</td>
+    <td class="col-online"><span class="tag tag-online">在线</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span></td>
+    <td class="col-art">写实</td>
+    <td class="col-diff diff-extreme">极难</td>
+</tr>
+<tr data-online="1" data-mac="0" data-linux="0" data-r90="0" data-hard="0" data-easy="0">
+    <td style="text-align:center;color:#666;">27</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=Counter-Strike%3A%20Condition%20Zero" target="_blank" title="在 Steam 商店中打开" class="steam-link">Counter-Strike: Condition Zero</a></td>
+    <td class="col-genre">FPS/经典</td>
+    <td class="col-gameplay">CS单机版含剧情任务</td>
+    <td class="col-rating rating-high">86%</td>
+    <td class="col-fun">★★★</td>
+    <td class="col-size">3</td>
+    <td class="col-online"><span class="tag tag-online">支持</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span></td>
+    <td class="col-art">写实</td>
+    <td class="col-diff diff-medium">中等</td>
+</tr>
+<tr data-online="0" data-mac="0" data-linux="0" data-r90="0" data-hard="0" data-easy="0">
+    <td style="text-align:center;color:#666;">28</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=Counter-Strike%3A%20CZ%20Deleted%20Scenes" target="_blank" title="在 Steam 商店中打开" class="steam-link">Counter-Strike: CZ Deleted Scenes</a></td>
+    <td class="col-genre">FPS/经典</td>
+    <td class="col-gameplay">CS:CZ被删减的单人剧情关卡</td>
+    <td class="col-rating rating-mid">75%</td>
+    <td class="col-fun">★★★</td>
+    <td class="col-size">3</td>
+    <td class="col-online"><span class="tag tag-offline">单人</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span></td>
+    <td class="col-art">写实</td>
+    <td class="col-diff diff-medium">中等</td>
+</tr>
+<tr data-online="0" data-mac="0" data-linux="0" data-r90="0" data-hard="0" data-easy="0">
+    <td style="text-align:center;color:#666;">29</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=Crazy%20Machines%203" target="_blank" title="在 Steam 商店中打开" class="steam-link">Crazy Machines 3</a></td>
+    <td class="col-genre">解谜/物理</td>
+    <td class="col-gameplay">鲁布戈德堡式物理机械解谜</td>
+    <td class="col-rating rating-high">89%</td>
+    <td class="col-fun">★★★★</td>
+    <td class="col-size">3</td>
+    <td class="col-online"><span class="tag tag-offline">单人</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span></td>
+    <td class="col-art">写实3D</td>
+    <td class="col-diff diff-medium">中等</td>
+</tr>
+<tr data-online="0" data-mac="1" data-linux="0" data-r90="1" data-hard="0" data-easy="0">
+    <td style="text-align:center;color:#666;">30</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=Cube%20Escape%20Collection" target="_blank" title="在 Steam 商店中打开" class="steam-link">Cube Escape Collection</a></td>
+    <td class="col-genre">解谜/恐怖</td>
+    <td class="col-gameplay">Rusty Lake密室逃脱系列合集</td>
+    <td class="col-rating rating-high">96%</td>
+    <td class="col-fun">★★★★★</td>
+    <td class="col-size">0.3</td>
+    <td class="col-online"><span class="tag tag-offline">单人</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span> <span class="tag tag-mac">Mac</span></td>
+    <td class="col-art">诡异手绘</td>
+    <td class="col-diff diff-medium">中等</td>
+</tr>
+<tr data-online="1" data-mac="1" data-linux="0" data-r90="1" data-hard="1" data-easy="0">
+    <td style="text-align:center;color:#666;">31</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=Cuphead" target="_blank" title="在 Steam 商店中打开" class="steam-link">Cuphead</a></td>
+    <td class="col-genre">动作/射击</td>
+    <td class="col-gameplay">1930s橡皮管动画风硬核BOSS战</td>
+    <td class="col-rating rating-high">96%</td>
+    <td class="col-fun">★★★★★</td>
+    <td class="col-size">5</td>
+    <td class="col-online"><span class="tag tag-online">本地</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span> <span class="tag tag-mac">Mac</span></td>
+    <td class="col-art">复古橡皮管动画</td>
+    <td class="col-diff diff-extreme">极难</td>
+</tr>
+<tr data-online="0" data-mac="0" data-linux="0" data-r90="0" data-hard="0" data-easy="0">
+    <td style="text-align:center;color:#666;">32</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=Cyberpunk%202077" target="_blank" title="在 Steam 商店中打开" class="steam-link">Cyberpunk 2077</a></td>
+    <td class="col-genre">RPG/开放世界</td>
+    <td class="col-gameplay">夜之城赛博朋克开放世界</td>
+    <td class="col-rating rating-mid">80%</td>
+    <td class="col-fun">★★★★</td>
+    <td class="col-size">70</td>
+    <td class="col-online"><span class="tag tag-offline">单人</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span></td>
+    <td class="col-art">写实赛博朋克</td>
+    <td class="col-diff diff-medium">中等</td>
+</tr>
+<tr data-online="0" data-mac="1" data-linux="0" data-r90="0" data-hard="0" data-easy="0">
+    <td style="text-align:center;color:#666;">33</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=cypher" target="_blank" title="在 Steam 商店中打开" class="steam-link">cypher</a></td>
+    <td class="col-genre">解谜/逻辑</td>
+    <td class="col-gameplay">密码学主题的逻辑解谜游戏</td>
+    <td class="col-rating rating-mid">82%</td>
+    <td class="col-fun">★★★</td>
+    <td class="col-size">0.2</td>
+    <td class="col-online"><span class="tag tag-offline">单人</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span> <span class="tag tag-mac">Mac</span></td>
+    <td class="col-art">极简</td>
+    <td class="col-diff diff-hard">困难</td>
+</tr>
+<tr data-online="1" data-mac="0" data-linux="0" data-r90="1" data-hard="1" data-easy="0">
+    <td style="text-align:center;color:#666;">34</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=DARK%20SOULS%20III" target="_blank" title="在 Steam 商店中打开" class="steam-link">DARK SOULS III</a></td>
+    <td class="col-genre">动作RPG/魂系</td>
+    <td class="col-gameplay">高难度暗黑奇幻动作RPG史诗</td>
+    <td class="col-rating rating-high">94%</td>
+    <td class="col-fun">★★★★★</td>
+    <td class="col-size">25</td>
+    <td class="col-online"><span class="tag tag-online">PVP</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span></td>
+    <td class="col-art">暗黑写实</td>
+    <td class="col-diff diff-extreme">极难</td>
+</tr>
+<tr data-online="0" data-mac="1" data-linux="0" data-r90="1" data-hard="0" data-easy="0">
+    <td style="text-align:center;color:#666;">35</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=DAVE%20THE%20DIVER" target="_blank" title="在 Steam 商店中打开" class="steam-link">DAVE THE DIVER</a></td>
+    <td class="col-genre">冒险/经营</td>
+    <td class="col-gameplay">白天潜水捕鱼晚上经营寿司店</td>
+    <td class="col-rating rating-high">97%</td>
+    <td class="col-fun">★★★★★</td>
+    <td class="col-size">5</td>
+    <td class="col-online"><span class="tag tag-offline">单人</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span> <span class="tag tag-mac">Mac</span></td>
+    <td class="col-art">像素精美</td>
+    <td class="col-diff diff-medium">中等</td>
+</tr>
+<tr data-online="0" data-mac="1" data-linux="1" data-r90="1" data-hard="0" data-easy="0">
+    <td style="text-align:center;color:#666;">36</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=Dead%20Cells" target="_blank" title="在 Steam 商店中打开" class="steam-link">Dead Cells</a></td>
+    <td class="col-genre">动作/Roguelike</td>
+    <td class="col-gameplay">像素快节奏横版战斗Roguelike</td>
+    <td class="col-rating rating-high">97%</td>
+    <td class="col-fun">★★★★★</td>
+    <td class="col-size">1</td>
+    <td class="col-online"><span class="tag tag-offline">单人</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span> <span class="tag tag-mac">Mac</span> <span class="tag tag-linux">Linux</span></td>
+    <td class="col-art">像素精美</td>
+    <td class="col-diff diff-hard">困难</td>
+</tr>
+<tr data-online="0" data-mac="1" data-linux="0" data-r90="0" data-hard="0" data-easy="1">
+    <td style="text-align:center;color:#666;">37</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=Deiland" target="_blank" title="在 Steam 商店中打开" class="steam-link">Deiland</a></td>
+    <td class="col-genre">冒险/沙盒</td>
+    <td class="col-gameplay">微型星球上的沙盒农场冒险</td>
+    <td class="col-rating rating-mid">78%</td>
+    <td class="col-fun">★★★</td>
+    <td class="col-size">1</td>
+    <td class="col-online"><span class="tag tag-offline">单人</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span> <span class="tag tag-mac">Mac</span></td>
+    <td class="col-art">卡通3D</td>
+    <td class="col-diff diff-easy">简单</td>
+</tr>
+<tr data-online="0" data-mac="1" data-linux="0" data-r90="1" data-hard="0" data-easy="0">
+    <td style="text-align:center;color:#666;">38</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=Disco%20Elysium" target="_blank" title="在 Steam 商店中打开" class="steam-link">Disco Elysium</a></td>
+    <td class="col-genre">RPG/推理</td>
+    <td class="col-gameplay">无战斗侦探RPG深度哲学对话</td>
+    <td class="col-rating rating-high">94%</td>
+    <td class="col-fun">★★★★★</td>
+    <td class="col-size">20</td>
+    <td class="col-online"><span class="tag tag-offline">单人</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span> <span class="tag tag-mac">Mac</span></td>
+    <td class="col-art">油画风格</td>
+    <td class="col-diff diff-hard">困难(脑力)</td>
+</tr>
+<tr data-online="0" data-mac="1" data-linux="0" data-r90="1" data-hard="0" data-easy="0">
+    <td style="text-align:center;color:#666;">39</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=Do%20Not%20Feed%20the%20Monkeys" target="_blank" title="在 Steam 商店中打开" class="steam-link">Do Not Feed the Monkeys</a></td>
+    <td class="col-genre">策略/模拟</td>
+    <td class="col-gameplay">偷窥并干预陌生人生活的独特模拟</td>
+    <td class="col-rating rating-high">93%</td>
+    <td class="col-fun">★★★★</td>
+    <td class="col-size">0.5</td>
+    <td class="col-online"><span class="tag tag-offline">单人</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span> <span class="tag tag-mac">Mac</span></td>
+    <td class="col-art">像素</td>
+    <td class="col-diff diff-medium">中等</td>
+</tr>
+<tr data-online="1" data-mac="1" data-linux="1" data-r90="1" data-hard="0" data-easy="0">
+    <td style="text-align:center;color:#666;">40</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=Don%27t%20Starve%20Together" target="_blank" title="在 Steam 商店中打开" class="steam-link">Don't Starve Together</a></td>
+    <td class="col-genre">生存/合作</td>
+    <td class="col-gameplay">哥特卡通风合作生存冒险</td>
+    <td class="col-rating rating-high">95%</td>
+    <td class="col-fun">★★★★★</td>
+    <td class="col-size">3</td>
+    <td class="col-online"><span class="tag tag-online">在线</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span> <span class="tag tag-mac">Mac</span> <span class="tag tag-linux">Linux</span></td>
+    <td class="col-art">哥特卡通</td>
+    <td class="col-diff diff-hard">困难</td>
+</tr>
+<tr data-online="1" data-mac="1" data-linux="0" data-r90="1" data-hard="0" data-easy="1">
+    <td style="text-align:center;color:#666;">41</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=Draw%20%26%20Guess" target="_blank" title="在 Steam 商店中打开" class="steam-link">Draw & Guess</a></td>
+    <td class="col-genre">派对/社交</td>
+    <td class="col-gameplay">你画我猜类型的多人派对游戏</td>
+    <td class="col-rating rating-high">90%</td>
+    <td class="col-fun">★★★★</td>
+    <td class="col-size">0.5</td>
+    <td class="col-online"><span class="tag tag-online">在线</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span> <span class="tag tag-mac">Mac</span></td>
+    <td class="col-art">简洁UI</td>
+    <td class="col-diff diff-easy">简单</td>
+</tr>
+<tr data-online="0" data-mac="0" data-linux="0" data-r90="0" data-hard="0" data-easy="0">
+    <td style="text-align:center;color:#666;">42</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=Epigraph" target="_blank" title="在 Steam 商店中打开" class="steam-link">Epigraph</a></td>
+    <td class="col-genre">解谜/语言</td>
+    <td class="col-gameplay">破译古代语言符号的逻辑解谜</td>
+    <td class="col-rating rating-mid">83%</td>
+    <td class="col-fun">★★★</td>
+    <td class="col-size">0.1</td>
+    <td class="col-online"><span class="tag tag-offline">单人</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span></td>
+    <td class="col-art">极简</td>
+    <td class="col-diff diff-hard">中等偏难</td>
+</tr>
+<tr data-online="1" data-mac="1" data-linux="1" data-r90="1" data-hard="0" data-easy="1">
+    <td style="text-align:center;color:#666;">43</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=Euro%20Truck%20Simulator%202" target="_blank" title="在 Steam 商店中打开" class="steam-link">Euro Truck Simulator 2</a></td>
+    <td class="col-genre">模拟/驾驶</td>
+    <td class="col-gameplay">欧洲卡车驾驶送货真实道路模拟</td>
+    <td class="col-rating rating-high">97%</td>
+    <td class="col-fun">★★★★★</td>
+    <td class="col-size">10</td>
+    <td class="col-online"><span class="tag tag-online">在线</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span> <span class="tag tag-mac">Mac</span> <span class="tag tag-linux">Linux</span></td>
+    <td class="col-art">写实3D</td>
+    <td class="col-diff diff-easy">简单</td>
+</tr>
+<tr data-online="1" data-mac="0" data-linux="0" data-r90="0" data-hard="0" data-easy="0">
+    <td style="text-align:center;color:#666;">44</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=FIFA%2022" target="_blank" title="在 Steam 商店中打开" class="steam-link">FIFA 22</a></td>
+    <td class="col-genre">体育/足球</td>
+    <td class="col-gameplay">EA足球模拟游戏</td>
+    <td class="col-rating rating-mid">72%</td>
+    <td class="col-fun">★★★</td>
+    <td class="col-size">50</td>
+    <td class="col-online"><span class="tag tag-online">在线</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span></td>
+    <td class="col-art">写实3D</td>
+    <td class="col-diff diff-medium">中等</td>
+</tr>
+<tr data-online="1" data-mac="0" data-linux="0" data-r90="0" data-hard="0" data-easy="1">
+    <td style="text-align:center;color:#666;">45</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=Fall%20Guys" target="_blank" title="在 Steam 商店中打开" class="steam-link">Fall Guys</a></td>
+    <td class="col-genre">派对/多人</td>
+    <td class="col-gameplay">综艺闯关大乱斗淘汰赛</td>
+    <td class="col-rating rating-mid">80%</td>
+    <td class="col-fun">★★★★</td>
+    <td class="col-size">2</td>
+    <td class="col-online"><span class="tag tag-online">在线</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span></td>
+    <td class="col-art">可爱卡通</td>
+    <td class="col-diff diff-easy">简单</td>
+</tr>
+<tr data-online="0" data-mac="0" data-linux="0" data-r90="0" data-hard="0" data-easy="0">
+    <td style="text-align:center;color:#666;">46</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=Fallout%204" target="_blank" title="在 Steam 商店中打开" class="steam-link">Fallout 4</a></td>
+    <td class="col-genre">RPG/开放世界</td>
+    <td class="col-gameplay">后末日废土开放世界角色扮演</td>
+    <td class="col-rating rating-mid">83%</td>
+    <td class="col-fun">★★★★</td>
+    <td class="col-size">35</td>
+    <td class="col-online"><span class="tag tag-offline">单人</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span></td>
+    <td class="col-art">写实废土</td>
+    <td class="col-diff diff-medium">中等</td>
+</tr>
+<tr data-online="0" data-mac="1" data-linux="0" data-r90="1" data-hard="0" data-easy="0">
+    <td style="text-align:center;color:#666;">47</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=Florence" target="_blank" title="在 Steam 商店中打开" class="steam-link">Florence</a></td>
+    <td class="col-genre">互动故事/情感</td>
+    <td class="col-gameplay">关于初恋的短篇互动漫画</td>
+    <td class="col-rating rating-high">96%</td>
+    <td class="col-fun">★★★★</td>
+    <td class="col-size">0.3</td>
+    <td class="col-online"><span class="tag tag-offline">单人</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span> <span class="tag tag-mac">Mac</span></td>
+    <td class="col-art">手绘漫画</td>
+    <td class="col-diff diff-easy">极简单</td>
+</tr>
+<tr data-online="1" data-mac="0" data-linux="0" data-r90="1" data-hard="0" data-easy="0">
+    <td style="text-align:center;color:#666;">48</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=Forza%20Horizon%204" target="_blank" title="在 Steam 商店中打开" class="steam-link">Forza Horizon 4 (极限竞速地平线4)</a></td>
+    <td class="col-genre">竞速/开放世界</td>
+    <td class="col-gameplay">英国开放世界赛车嘉年华</td>
+    <td class="col-rating rating-high">90%</td>
+    <td class="col-fun">★★★★★</td>
+    <td class="col-size">80</td>
+    <td class="col-online"><span class="tag tag-online">在线</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span></td>
+    <td class="col-art">写实唯美</td>
+    <td class="col-diff diff-medium">中等</td>
+</tr>
+<tr data-online="1" data-mac="0" data-linux="0" data-r90="0" data-hard="0" data-easy="0">
+    <td style="text-align:center;color:#666;">49</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=Forza%20Horizon%205" target="_blank" title="在 Steam 商店中打开" class="steam-link">Forza Horizon 5 (极限竞速地平线5)</a></td>
+    <td class="col-genre">竞速/开放世界</td>
+    <td class="col-gameplay">墨西哥开放世界赛车嘉年华</td>
+    <td class="col-rating rating-high">89%</td>
+    <td class="col-fun">★★★★★</td>
+    <td class="col-size">110</td>
+    <td class="col-online"><span class="tag tag-online">在线</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span></td>
+    <td class="col-art">写实唯美</td>
+    <td class="col-diff diff-medium">中等</td>
+</tr>
+<tr data-online="0" data-mac="0" data-linux="0" data-r90="0" data-hard="0" data-easy="0">
+    <td style="text-align:center;color:#666;">50</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=Gamecraft" target="_blank" title="在 Steam 商店中打开" class="steam-link">Gamecraft</a></td>
+    <td class="col-genre">沙盒/建造</td>
+    <td class="col-gameplay">用积木创造物理游戏的沙盒</td>
+    <td class="col-rating rating-mid">75%</td>
+    <td class="col-fun">★★★</td>
+    <td class="col-size">1</td>
+    <td class="col-online"><span class="tag tag-offline">单人</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span></td>
+    <td class="col-art">简洁3D</td>
+    <td class="col-diff diff-medium">中等</td>
+</tr>
+<tr data-online="0" data-mac="0" data-linux="0" data-r90="0" data-hard="0" data-easy="0">
+    <td style="text-align:center;color:#666;">51</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=Gateways" target="_blank" title="在 Steam 商店中打开" class="steam-link">Gateways</a></td>
+    <td class="col-genre">平台/解谜</td>
+    <td class="col-gameplay">使用传送枪的横版解谜平台游戏</td>
+    <td class="col-rating rating-high">87%</td>
+    <td class="col-fun">★★★★</td>
+    <td class="col-size">0.2</td>
+    <td class="col-online"><span class="tag tag-offline">单人</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span></td>
+    <td class="col-art">像素复古</td>
+    <td class="col-diff diff-hard">中等偏难</td>
+</tr>
+<tr data-online="0" data-mac="1" data-linux="0" data-r90="0" data-hard="0" data-easy="0">
+    <td style="text-align:center;color:#666;">52</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=Getting%20Over%20It%20with%20Bennett%20Foddy" target="_blank" title="在 Steam 商店中打开" class="steam-link">Getting Over It with Bennett Foddy</a></td>
+    <td class="col-genre">平台/动作</td>
+    <td class="col-gameplay">用锤子攀爬的自虐物理游戏</td>
+    <td class="col-rating rating-mid">82%</td>
+    <td class="col-fun">★★★★</td>
+    <td class="col-size">2</td>
+    <td class="col-online"><span class="tag tag-offline">单人</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span> <span class="tag tag-mac">Mac</span></td>
+    <td class="col-art">简约3D</td>
+    <td class="col-diff diff-extreme">极度困难</td>
+</tr>
+<tr data-online="0" data-mac="0" data-linux="0" data-r90="1" data-hard="1" data-easy="0">
+    <td style="text-align:center;color:#666;">53</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=Ghostrunner" target="_blank" title="在 Steam 商店中打开" class="steam-link">Ghostrunner</a></td>
+    <td class="col-genre">动作/赛博朋克</td>
+    <td class="col-gameplay">第一人称跑酷斩击杀敌一击必杀</td>
+    <td class="col-rating rating-high">93%</td>
+    <td class="col-fun">★★★★</td>
+    <td class="col-size">25</td>
+    <td class="col-online"><span class="tag tag-offline">单人</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span></td>
+    <td class="col-art">赛博朋克写实</td>
+    <td class="col-diff diff-extreme">极难</td>
+</tr>
+<tr data-online="0" data-mac="1" data-linux="0" data-r90="0" data-hard="0" data-easy="1">
+    <td style="text-align:center;color:#666;">54</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=Go%21%20Go%21%20Nippon%21" target="_blank" title="在 Steam 商店中打开" class="steam-link">Go! Go! Nippon!</a></td>
+    <td class="col-genre">视觉小说/旅行</td>
+    <td class="col-gameplay">日本旅行主题恋爱冒险视觉小说</td>
+    <td class="col-rating rating-high">85%</td>
+    <td class="col-fun">★★★</td>
+    <td class="col-size">1</td>
+    <td class="col-online"><span class="tag tag-offline">单人</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span> <span class="tag tag-mac">Mac</span></td>
+    <td class="col-art">日系动漫</td>
+    <td class="col-diff diff-easy">简单</td>
+</tr>
+<tr data-online="1" data-mac="0" data-linux="0" data-r90="0" data-hard="0" data-easy="0">
+    <td style="text-align:center;color:#666;">55</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=GOAT%20OF%20DUTY" target="_blank" title="在 Steam 商店中打开" class="steam-link">GOAT OF DUTY</a></td>
+    <td class="col-genre">FPS/搞笑</td>
+    <td class="col-gameplay">扮演山羊的搞笑大乱斗射击</td>
+    <td class="col-rating rating-high">88%</td>
+    <td class="col-fun">★★★★</td>
+    <td class="col-size">5</td>
+    <td class="col-online"><span class="tag tag-online">在线</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span></td>
+    <td class="col-art">3D卡通</td>
+    <td class="col-diff diff-medium">中等</td>
+</tr>
+<tr data-online="0" data-mac="1" data-linux="0" data-r90="0" data-hard="0" data-easy="1">
+    <td style="text-align:center;color:#666;">56</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=Goat%20Simulator" target="_blank" title="在 Steam 商店中打开" class="steam-link">Goat Simulator</a></td>
+    <td class="col-genre">模拟/搞笑</td>
+    <td class="col-gameplay">扮演山羊在城市中制造混乱</td>
+    <td class="col-rating rating-high">87%</td>
+    <td class="col-fun">★★★</td>
+    <td class="col-size">2</td>
+    <td class="col-online"><span class="tag tag-offline">单人</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span> <span class="tag tag-mac">Mac</span></td>
+    <td class="col-art">3D搞笑</td>
+    <td class="col-diff diff-easy">简单</td>
+</tr>
+<tr data-online="1" data-mac="1" data-linux="0" data-r90="0" data-hard="0" data-easy="1">
+    <td style="text-align:center;color:#666;">57</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=Goose%20Goose%20Duck" target="_blank" title="在 Steam 商店中打开" class="steam-link">Goose Goose Duck</a></td>
+    <td class="col-genre">社交/推理</td>
+    <td class="col-gameplay">免费社交推理类似太空狼人杀</td>
+    <td class="col-rating rating-mid">82%</td>
+    <td class="col-fun">★★★★</td>
+    <td class="col-size">0.5</td>
+    <td class="col-online"><span class="tag tag-online">在线</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span> <span class="tag tag-mac">Mac</span></td>
+    <td class="col-art">可爱卡通</td>
+    <td class="col-diff diff-easy">简单</td>
+</tr>
+<tr data-online="0" data-mac="1" data-linux="0" data-r90="1" data-hard="0" data-easy="0">
+    <td style="text-align:center;color:#666;">58</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=Gorogoa" target="_blank" title="在 Steam 商店中打开" class="steam-link">Gorogoa</a></td>
+    <td class="col-genre">解谜/艺术</td>
+    <td class="col-gameplay">手工绘制创意拼图解谜神作</td>
+    <td class="col-rating rating-high">97%</td>
+    <td class="col-fun">★★★★★</td>
+    <td class="col-size">0.5</td>
+    <td class="col-online"><span class="tag tag-offline">单人</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span> <span class="tag tag-mac">Mac</span></td>
+    <td class="col-art">精美手绘</td>
+    <td class="col-diff diff-medium">中等</td>
+</tr>
+<tr data-online="0" data-mac="1" data-linux="0" data-r90="1" data-hard="0" data-easy="1">
+    <td style="text-align:center;color:#666;">59</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=GRIS" target="_blank" title="在 Steam 商店中打开" class="steam-link">GRIS</a></td>
+    <td class="col-genre">平台/艺术</td>
+    <td class="col-gameplay">唯美水彩画风治愈系平台冒险</td>
+    <td class="col-rating rating-high">96%</td>
+    <td class="col-fun">★★★★★</td>
+    <td class="col-size">4</td>
+    <td class="col-online"><span class="tag tag-offline">单人</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span> <span class="tag tag-mac">Mac</span></td>
+    <td class="col-art">水彩唯美</td>
+    <td class="col-diff diff-easy">简单</td>
+</tr>
+<tr data-online="0" data-mac="1" data-linux="0" data-r90="1" data-hard="0" data-easy="0">
+    <td style="text-align:center;color:#666;">60</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=Hades" target="_blank" title="在 Steam 商店中打开" class="steam-link">Hades</a></td>
+    <td class="col-genre">动作/Roguelike</td>
+    <td class="col-gameplay">希腊神话地下城动作剧情Roguelike</td>
+    <td class="col-rating rating-high">98%</td>
+    <td class="col-fun">★★★★★</td>
+    <td class="col-size">15</td>
+    <td class="col-online"><span class="tag tag-offline">单人</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span> <span class="tag tag-mac">Mac</span></td>
+    <td class="col-art">漫画风格</td>
+    <td class="col-diff diff-hard">中等偏难</td>
+</tr>
+<tr data-online="1" data-mac="0" data-linux="0" data-r90="0" data-hard="1" data-easy="0">
+    <td style="text-align:center;color:#666;">61</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=Hand%20Simulator" target="_blank" title="在 Steam 商店中打开" class="steam-link">Hand Simulator</a></td>
+    <td class="col-genre">模拟/搞笑</td>
+    <td class="col-gameplay">物理模拟手部动作的搞笑游戏</td>
+    <td class="col-rating rating-mid">72%</td>
+    <td class="col-fun">★★★</td>
+    <td class="col-size">2</td>
+    <td class="col-online"><span class="tag tag-online">在线</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span></td>
+    <td class="col-art">3D写实</td>
+    <td class="col-diff diff-extreme">极难(物理)</td>
+</tr>
+<tr data-online="1" data-mac="1" data-linux="0" data-r90="0" data-hard="0" data-easy="0">
+    <td style="text-align:center;color:#666;">62</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=Handshakes" target="_blank" title="在 Steam 商店中打开" class="steam-link">Handshakes</a></td>
+    <td class="col-genre">解谜/合作</td>
+    <td class="col-gameplay">两只手掌合作完成的独特解谜</td>
+    <td class="col-rating rating-mid">80%</td>
+    <td class="col-fun">★★★</td>
+    <td class="col-size">0.2</td>
+    <td class="col-online"><span class="tag tag-online">本地</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span> <span class="tag tag-mac">Mac</span></td>
+    <td class="col-art">极简</td>
+    <td class="col-diff diff-medium">中等</td>
+</tr>
+<tr data-online="0" data-mac="1" data-linux="0" data-r90="0" data-hard="0" data-easy="1">
+    <td style="text-align:center;color:#666;">63</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=HER%20TREES%3A%20PUZZLE%20DREAM" target="_blank" title="在 Steam 商店中打开" class="steam-link">HER TREES: PUZZLE DREAM</a></td>
+    <td class="col-genre">解谜/休闲</td>
+    <td class="col-gameplay">树木主题的拼图解谜</td>
+    <td class="col-rating rating-mid">82%</td>
+    <td class="col-fun">★★★</td>
+    <td class="col-size">0.3</td>
+    <td class="col-online"><span class="tag tag-offline">单人</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span> <span class="tag tag-mac">Mac</span></td>
+    <td class="col-art">唯美手绘</td>
+    <td class="col-diff diff-easy">简单</td>
+</tr>
+<tr data-online="0" data-mac="1" data-linux="0" data-r90="0" data-hard="0" data-easy="1">
+    <td style="text-align:center;color:#666;">64</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=HER%20TREES%3A%20THE%20PUZZLE%20HOUSE" target="_blank" title="在 Steam 商店中打开" class="steam-link">HER TREES: THE PUZZLE HOUSE</a></td>
+    <td class="col-genre">解谜/休闲</td>
+    <td class="col-gameplay">续作更多树木拼图</td>
+    <td class="col-rating rating-mid">82%</td>
+    <td class="col-fun">★★★</td>
+    <td class="col-size">0.3</td>
+    <td class="col-online"><span class="tag tag-offline">单人</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span> <span class="tag tag-mac">Mac</span></td>
+    <td class="col-art">唯美手绘</td>
+    <td class="col-diff diff-easy">简单</td>
+</tr>
+<tr data-online="0" data-mac="1" data-linux="0" data-r90="1" data-hard="0" data-easy="0">
+    <td style="text-align:center;color:#666;">65</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=Hexcells%20Infinite" target="_blank" title="在 Steam 商店中打开" class="steam-link">Hexcells Infinite</a></td>
+    <td class="col-genre">解谜/逻辑</td>
+    <td class="col-gameplay">六角格扫雷式逻辑解谜无限关卡</td>
+    <td class="col-rating rating-high">97%</td>
+    <td class="col-fun">★★★★★</td>
+    <td class="col-size">0.1</td>
+    <td class="col-online"><span class="tag tag-offline">单人</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span> <span class="tag tag-mac">Mac</span></td>
+    <td class="col-art">极简优雅</td>
+    <td class="col-diff diff-hard">困难</td>
+</tr>
+<tr data-online="0" data-mac="1" data-linux="1" data-r90="1" data-hard="0" data-easy="0">
+    <td style="text-align:center;color:#666;">66</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=Hollow%20Knight" target="_blank" title="在 Steam 商店中打开" class="steam-link">Hollow Knight</a></td>
+    <td class="col-genre">动作/银河城</td>
+    <td class="col-gameplay">手绘昆虫王国史诗类魂探索冒险</td>
+    <td class="col-rating rating-high">97%</td>
+    <td class="col-fun">★★★★★</td>
+    <td class="col-size">9</td>
+    <td class="col-online"><span class="tag tag-offline">单人</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span> <span class="tag tag-mac">Mac</span> <span class="tag tag-linux">Linux</span></td>
+    <td class="col-art">手绘哥特</td>
+    <td class="col-diff diff-hard">困难</td>
+</tr>
+<tr data-online="0" data-mac="1" data-linux="0" data-r90="0" data-hard="0" data-easy="0">
+    <td style="text-align:center;color:#666;">67</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=Hollow%20Knight%3A%20Silksong" target="_blank" title="在 Steam 商店中打开" class="steam-link">Hollow Knight: Silksong</a></td>
+    <td class="col-genre">动作/银河城</td>
+    <td class="col-gameplay">续作大黄蜂主角</td>
+    <td class="col-rating ">待定</td>
+    <td class="col-fun">★★★★★</td>
+    <td class="col-size">待定</td>
+    <td class="col-online"><span class="tag tag-offline">单人</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span> <span class="tag tag-mac">Mac</span></td>
+    <td class="col-art">手绘哥特</td>
+    <td class="col-diff diff-hard">困难</td>
+</tr>
+<tr data-online="1" data-mac="1" data-linux="0" data-r90="1" data-hard="0" data-easy="0">
+    <td style="text-align:center;color:#666;">68</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=Human%20Fall%20Flat" target="_blank" title="在 Steam 商店中打开" class="steam-link">Human Fall Flat</a></td>
+    <td class="col-genre">解谜/物理</td>
+    <td class="col-gameplay">软体物理搞笑合作解谜闯关</td>
+    <td class="col-rating rating-high">94%</td>
+    <td class="col-fun">★★★★★</td>
+    <td class="col-size">2</td>
+    <td class="col-online"><span class="tag tag-online">合作</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span> <span class="tag tag-mac">Mac</span></td>
+    <td class="col-art">简约3D</td>
+    <td class="col-diff diff-medium">中等</td>
+</tr>
+<tr data-online="1" data-mac="1" data-linux="0" data-r90="1" data-hard="0" data-easy="0">
+    <td style="text-align:center;color:#666;">69</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=ibb%20%26%20obb" target="_blank" title="在 Steam 商店中打开" class="steam-link">ibb & obb</a></td>
+    <td class="col-genre">平台/合作</td>
+    <td class="col-gameplay">重力反转双人合作解谜平台游戏</td>
+    <td class="col-rating rating-high">91%</td>
+    <td class="col-fun">★★★★</td>
+    <td class="col-size">0.5</td>
+    <td class="col-online"><span class="tag tag-online">本地</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span> <span class="tag tag-mac">Mac</span></td>
+    <td class="col-art">极简几何</td>
+    <td class="col-diff diff-medium">中等</td>
+</tr>
+<tr data-online="0" data-mac="1" data-linux="0" data-r90="1" data-hard="0" data-easy="0">
+    <td style="text-align:center;color:#666;">70</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=INSIDE" target="_blank" title="在 Steam 商店中打开" class="steam-link">INSIDE</a></td>
+    <td class="col-genre">冒险/解谜</td>
+    <td class="col-gameplay">暗黑反乌托邦横版解谜冒险</td>
+    <td class="col-rating rating-high">96%</td>
+    <td class="col-fun">★★★★★</td>
+    <td class="col-size">3</td>
+    <td class="col-online"><span class="tag tag-offline">单人</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span> <span class="tag tag-mac">Mac</span></td>
+    <td class="col-art">暗黑极简3D</td>
+    <td class="col-diff diff-medium">中等</td>
+</tr>
+<tr data-online="1" data-mac="1" data-linux="0" data-r90="1" data-hard="0" data-easy="0">
+    <td style="text-align:center;color:#666;">71</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=Insurgency" target="_blank" title="在 Steam 商店中打开" class="steam-link">Insurgency</a></td>
+    <td class="col-genre">FPS/战术</td>
+    <td class="col-gameplay">拟真现代军事战术射击游戏</td>
+    <td class="col-rating rating-high">91%</td>
+    <td class="col-fun">★★★★</td>
+    <td class="col-size">15</td>
+    <td class="col-online"><span class="tag tag-online">在线</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span> <span class="tag tag-mac">Mac</span></td>
+    <td class="col-art">写实</td>
+    <td class="col-diff diff-hard">困难</td>
+</tr>
+<tr data-online="0" data-mac="1" data-linux="0" data-r90="1" data-hard="0" data-easy="1">
+    <td style="text-align:center;color:#666;">72</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=Iron%20Snout" target="_blank" title="在 Steam 商店中打开" class="steam-link">Iron Snout</a></td>
+    <td class="col-genre">格斗/休闲</td>
+    <td class="col-gameplay">小猪击败狼群的快节奏街机格斗</td>
+    <td class="col-rating rating-high">96%</td>
+    <td class="col-fun">★★★★</td>
+    <td class="col-size">0.1</td>
+    <td class="col-online"><span class="tag tag-offline">单人</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span> <span class="tag tag-mac">Mac</span></td>
+    <td class="col-art">可爱像素</td>
+    <td class="col-diff diff-easy">简单</td>
+</tr>
+<tr data-online="0" data-mac="1" data-linux="0" data-r90="1" data-hard="0" data-easy="1">
+    <td style="text-align:center;color:#666;">73</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=ISLANDERS" target="_blank" title="在 Steam 商店中打开" class="steam-link">ISLANDERS</a></td>
+    <td class="col-genre">策略/休闲</td>
+    <td class="col-gameplay">极简主义的岛屿城市建设游戏</td>
+    <td class="col-rating rating-high">95%</td>
+    <td class="col-fun">★★★★</td>
+    <td class="col-size">0.2</td>
+    <td class="col-online"><span class="tag tag-offline">单人</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span> <span class="tag tag-mac">Mac</span></td>
+    <td class="col-art">极简低多边形</td>
+    <td class="col-diff diff-easy">简单</td>
+</tr>
+<tr data-online="1" data-mac="0" data-linux="0" data-r90="1" data-hard="0" data-easy="1">
+    <td style="text-align:center;color:#666;">74</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=Journey" target="_blank" title="在 Steam 商店中打开" class="steam-link">Journey</a></td>
+    <td class="col-genre">冒险/艺术</td>
+    <td class="col-gameplay">沙漠中的无台词情感之旅</td>
+    <td class="col-rating rating-high">95%</td>
+    <td class="col-fun">★★★★★</td>
+    <td class="col-size">4</td>
+    <td class="col-online"><span class="tag tag-online">随机</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span></td>
+    <td class="col-art">唯美艺术</td>
+    <td class="col-diff diff-easy">简单</td>
+</tr>
+<tr data-online="0" data-mac="1" data-linux="1" data-r90="1" data-hard="1" data-easy="0">
+    <td style="text-align:center;color:#666;">75</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=Kerbal%20Space%20Program" target="_blank" title="在 Steam 商店中打开" class="steam-link">Kerbal Space Program</a></td>
+    <td class="col-genre">模拟/物理</td>
+    <td class="col-gameplay">建造火箭探索外太空物理模拟</td>
+    <td class="col-rating rating-high">95%</td>
+    <td class="col-fun">★★★★★</td>
+    <td class="col-size">3</td>
+    <td class="col-online"><span class="tag tag-offline">单人</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span> <span class="tag tag-mac">Mac</span> <span class="tag tag-linux">Linux</span></td>
+    <td class="col-art">写实3D</td>
+    <td class="col-diff diff-extreme">极难</td>
+</tr>
+<tr data-online="1" data-mac="0" data-linux="0" data-r90="0" data-hard="0" data-easy="0">
+    <td style="text-align:center;color:#666;">76</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=Lara%20Croft%20and%20the%20Temple%20of%20Osiris" target="_blank" title="在 Steam 商店中打开" class="steam-link">Lara Croft and the Temple of Osiris</a></td>
+    <td class="col-genre">动作/合作</td>
+    <td class="col-gameplay">45度俯视劳拉合作射击解谜</td>
+    <td class="col-rating rating-mid">82%</td>
+    <td class="col-fun">★★★</td>
+    <td class="col-size">5</td>
+    <td class="col-online"><span class="tag tag-online">在线</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span></td>
+    <td class="col-art">写实3D</td>
+    <td class="col-diff diff-medium">中等</td>
+</tr>
+<tr data-online="1" data-mac="1" data-linux="1" data-r90="1" data-hard="0" data-easy="0">
+    <td style="text-align:center;color:#666;">77</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=Left%204%20Dead%202" target="_blank" title="在 Steam 商店中打开" class="steam-link">Left 4 Dead 2</a></td>
+    <td class="col-genre">FPS/合作</td>
+    <td class="col-gameplay">四人合作打僵尸经典神作</td>
+    <td class="col-rating rating-high">97%</td>
+    <td class="col-fun">★★★★★</td>
+    <td class="col-size">14</td>
+    <td class="col-online"><span class="tag tag-online">在线</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span> <span class="tag tag-mac">Mac</span> <span class="tag tag-linux">Linux</span></td>
+    <td class="col-art">写实</td>
+    <td class="col-diff diff-medium">中等</td>
+</tr>
+<tr data-online="0" data-mac="1" data-linux="1" data-r90="1" data-hard="0" data-easy="1">
+    <td style="text-align:center;color:#666;">78</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=Life%20is%20Strange" target="_blank" title="在 Steam 商店中打开" class="steam-link">Life is Strange</a></td>
+    <td class="col-genre">冒险/互动</td>
+    <td class="col-gameplay">能倒转时间的少女校园冒险</td>
+    <td class="col-rating rating-high">96%</td>
+    <td class="col-fun">★★★★★</td>
+    <td class="col-size">15</td>
+    <td class="col-online"><span class="tag tag-offline">单人</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span> <span class="tag tag-mac">Mac</span> <span class="tag tag-linux">Linux</span></td>
+    <td class="col-art">写实风格</td>
+    <td class="col-diff diff-easy">简单</td>
+</tr>
+<tr data-online="0" data-mac="1" data-linux="1" data-r90="0" data-hard="0" data-easy="1">
+    <td style="text-align:center;color:#666;">79</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=Life%20is%20Strange%202" target="_blank" title="在 Steam 商店中打开" class="steam-link">Life is Strange 2</a></td>
+    <td class="col-genre">冒险/互动</td>
+    <td class="col-gameplay">兄弟逃亡的美国公路之旅</td>
+    <td class="col-rating rating-high">89%</td>
+    <td class="col-fun">★★★★</td>
+    <td class="col-size">40</td>
+    <td class="col-online"><span class="tag tag-offline">单人</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span> <span class="tag tag-mac">Mac</span> <span class="tag tag-linux">Linux</span></td>
+    <td class="col-art">写实风格</td>
+    <td class="col-diff diff-easy">简单</td>
+</tr>
+<tr data-online="0" data-mac="1" data-linux="1" data-r90="1" data-hard="0" data-easy="1">
+    <td style="text-align:center;color:#666;">80</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=Life%20is%20Strange%3A%20Before%20the%20Storm" target="_blank" title="在 Steam 商店中打开" class="steam-link">Life is Strange: Before the Storm</a></td>
+    <td class="col-genre">冒险/互动</td>
+    <td class="col-gameplay">前传Chloe与Rachel的故事</td>
+    <td class="col-rating rating-high">91%</td>
+    <td class="col-fun">★★★★</td>
+    <td class="col-size">15</td>
+    <td class="col-online"><span class="tag tag-offline">单人</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span> <span class="tag tag-mac">Mac</span> <span class="tag tag-linux">Linux</span></td>
+    <td class="col-art">写实风格</td>
+    <td class="col-diff diff-easy">简单</td>
+</tr>
+<tr data-online="0" data-mac="1" data-linux="1" data-r90="1" data-hard="0" data-easy="0">
+    <td style="text-align:center;color:#666;">81</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=LIMBO" target="_blank" title="在 Steam 商店中打开" class="steam-link">LIMBO</a></td>
+    <td class="col-genre">平台/解谜</td>
+    <td class="col-gameplay">黑白剪影风格暗黑解谜平台</td>
+    <td class="col-rating rating-high">93%</td>
+    <td class="col-fun">★★★★★</td>
+    <td class="col-size">0.2</td>
+    <td class="col-online"><span class="tag tag-offline">单人</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span> <span class="tag tag-mac">Mac</span> <span class="tag tag-linux">Linux</span></td>
+    <td class="col-art">黑白剪影</td>
+    <td class="col-diff diff-medium">中等</td>
+</tr>
+<tr data-online="0" data-mac="0" data-linux="0" data-r90="1" data-hard="0" data-easy="0">
+    <td style="text-align:center;color:#666;">82</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=Little%20Nightmares" target="_blank" title="在 Steam 商店中打开" class="steam-link">Little Nightmares</a></td>
+    <td class="col-genre">冒险/恐怖</td>
+    <td class="col-gameplay">暗黑童话风格横版恐怖冒险</td>
+    <td class="col-rating rating-high">94%</td>
+    <td class="col-fun">★★★★</td>
+    <td class="col-size">3</td>
+    <td class="col-online"><span class="tag tag-offline">单人</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span></td>
+    <td class="col-art">暗黑童话</td>
+    <td class="col-diff diff-medium">中等</td>
+</tr>
+<tr data-online="0" data-mac="1" data-linux="1" data-r90="1" data-hard="0" data-easy="0">
+    <td style="text-align:center;color:#666;">83</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=Machinarium" target="_blank" title="在 Steam 商店中打开" class="steam-link">Machinarium</a></td>
+    <td class="col-genre">解谜/冒险</td>
+    <td class="col-gameplay">手绘蒸汽朋克机器人点触冒险</td>
+    <td class="col-rating rating-high">95%</td>
+    <td class="col-fun">★★★★★</td>
+    <td class="col-size">0.3</td>
+    <td class="col-online"><span class="tag tag-offline">单人</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span> <span class="tag tag-mac">Mac</span> <span class="tag tag-linux">Linux</span></td>
+    <td class="col-art">蒸汽朋克手绘</td>
+    <td class="col-diff diff-medium">中等</td>
+</tr>
+<tr data-online="0" data-mac="0" data-linux="0" data-r90="1" data-hard="0" data-easy="0">
+    <td style="text-align:center;color:#666;">84</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=Masterplan%20Tycoon" target="_blank" title="在 Steam 商店中打开" class="steam-link">Masterplan Tycoon</a></td>
+    <td class="col-genre">模拟/策略</td>
+    <td class="col-gameplay">极简主义供应链管理模拟</td>
+    <td class="col-rating rating-high">91%</td>
+    <td class="col-fun">★★★★</td>
+    <td class="col-size">0.2</td>
+    <td class="col-online"><span class="tag tag-offline">单人</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span></td>
+    <td class="col-art">极简</td>
+    <td class="col-diff diff-medium">中等</td>
+</tr>
+<tr data-online="0" data-mac="1" data-linux="1" data-r90="1" data-hard="0" data-easy="1">
+    <td style="text-align:center;color:#666;">85</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=Melvor%20Idle" target="_blank" title="在 Steam 商店中打开" class="steam-link">Melvor Idle</a></td>
+    <td class="col-genre">放置/RPG</td>
+    <td class="col-gameplay">类RuneScape深度放置挂机RPG</td>
+    <td class="col-rating rating-high">93%</td>
+    <td class="col-fun">★★★★</td>
+    <td class="col-size">0.2</td>
+    <td class="col-online"><span class="tag tag-offline">单人</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span> <span class="tag tag-mac">Mac</span> <span class="tag tag-linux">Linux</span></td>
+    <td class="col-art">简洁UI</td>
+    <td class="col-diff diff-easy">简单(挂机)</td>
+</tr>
+<tr data-online="1" data-mac="0" data-linux="0" data-r90="0" data-hard="0" data-easy="0">
+    <td style="text-align:center;color:#666;">86</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=Monster%20Hunter%3A%20World" target="_blank" title="在 Steam 商店中打开" class="steam-link">Monster Hunter: World</a></td>
+    <td class="col-genre">动作RPG/狩猎</td>
+    <td class="col-gameplay">合作狩猎巨型怪物打造装备</td>
+    <td class="col-rating rating-high">89%</td>
+    <td class="col-fun">★★★★★</td>
+    <td class="col-size">50</td>
+    <td class="col-online"><span class="tag tag-online">在线</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span></td>
+    <td class="col-art">写实3D</td>
+    <td class="col-diff diff-hard">困难</td>
+</tr>
+<tr data-online="0" data-mac="1" data-linux="0" data-r90="0" data-hard="0" data-easy="0">
+    <td style="text-align:center;color:#666;">87</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=Mountain" target="_blank" title="在 Steam 商店中打开" class="steam-link">Mountain</a></td>
+    <td class="col-genre">放置/艺术</td>
+    <td class="col-gameplay">一座会与你对话的山哲学放置</td>
+    <td class="col-rating ">65%</td>
+    <td class="col-fun">★★★</td>
+    <td class="col-size">0.2</td>
+    <td class="col-online"><span class="tag tag-offline">单人</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span> <span class="tag tag-mac">Mac</span></td>
+    <td class="col-art">简约3D</td>
+    <td class="col-diff diff-easy">极简单</td>
+</tr>
+<tr data-online="1" data-mac="0" data-linux="0" data-r90="1" data-hard="0" data-easy="0">
+    <td style="text-align:center;color:#666;">88</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=Operation%3A%20Tango" target="_blank" title="在 Steam 商店中打开" class="steam-link">Operation: Tango</a></td>
+    <td class="col-genre">合作/间谍</td>
+    <td class="col-gameplay">双人不对称合作的谍战游戏</td>
+    <td class="col-rating rating-high">90%</td>
+    <td class="col-fun">★★★★</td>
+    <td class="col-size">7</td>
+    <td class="col-online"><span class="tag tag-online">双人</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span></td>
+    <td class="col-art">卡通写实</td>
+    <td class="col-diff diff-medium">中等</td>
+</tr>
+<tr data-online="0" data-mac="0" data-linux="0" data-r90="1" data-hard="0" data-easy="0">
+    <td style="text-align:center;color:#666;">89</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=Ori%20and%20the%20Will%20of%20the%20Wisps" target="_blank" title="在 Steam 商店中打开" class="steam-link">Ori and the Will of the Wisps</a></td>
+    <td class="col-genre">平台/银河城</td>
+    <td class="col-gameplay">唯美手绘平台冒险续作</td>
+    <td class="col-rating rating-high">96%</td>
+    <td class="col-fun">★★★★★</td>
+    <td class="col-size">10</td>
+    <td class="col-online"><span class="tag tag-offline">单人</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span></td>
+    <td class="col-art">唯美手绘</td>
+    <td class="col-diff diff-hard">困难</td>
+</tr>
+<tr data-online="0" data-mac="0" data-linux="0" data-r90="1" data-hard="0" data-easy="0">
+    <td style="text-align:center;color:#666;">90</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=Outer%20Wilds" target="_blank" title="在 Steam 商店中打开" class="steam-link">Outer Wilds</a></td>
+    <td class="col-genre">冒险/探索</td>
+    <td class="col-gameplay">22分钟时间循环探索太阳系</td>
+    <td class="col-rating rating-high">95%</td>
+    <td class="col-fun">★★★★★</td>
+    <td class="col-size">8</td>
+    <td class="col-online"><span class="tag tag-offline">单人</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span></td>
+    <td class="col-art">低多边形</td>
+    <td class="col-diff diff-medium">中等</td>
+</tr>
+<tr data-online="0" data-mac="1" data-linux="1" data-r90="1" data-hard="0" data-easy="0">
+    <td style="text-align:center;color:#666;">91</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=Outlast" target="_blank" title="在 Steam 商店中打开" class="steam-link">Outlast</a></td>
+    <td class="col-genre">恐怖/生存</td>
+    <td class="col-gameplay">第一人称精神病院逃生恐怖</td>
+    <td class="col-rating rating-high">96%</td>
+    <td class="col-fun">★★★★</td>
+    <td class="col-size">3</td>
+    <td class="col-online"><span class="tag tag-offline">单人</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span> <span class="tag tag-mac">Mac</span> <span class="tag tag-linux">Linux</span></td>
+    <td class="col-art">写实恐怖</td>
+    <td class="col-diff diff-medium">中等</td>
+</tr>
+<tr data-online="0" data-mac="0" data-linux="0" data-r90="0" data-hard="0" data-easy="0">
+    <td style="text-align:center;color:#666;">92</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=Outlast%202" target="_blank" title="在 Steam 商店中打开" class="steam-link">Outlast 2</a></td>
+    <td class="col-genre">恐怖/生存</td>
+    <td class="col-gameplay">宗教主题恐怖逃生续作</td>
+    <td class="col-rating rating-high">88%</td>
+    <td class="col-fun">★★★★</td>
+    <td class="col-size">25</td>
+    <td class="col-online"><span class="tag tag-offline">单人</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span></td>
+    <td class="col-art">写实恐怖</td>
+    <td class="col-diff diff-medium">中等</td>
+</tr>
+<tr data-online="1" data-mac="1" data-linux="0" data-r90="0" data-hard="0" data-easy="0">
+    <td style="text-align:center;color:#666;">93</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=Overcooked" target="_blank" title="在 Steam 商店中打开" class="steam-link">Overcooked</a></td>
+    <td class="col-genre">合作/派对</td>
+    <td class="col-gameplay">混乱欢乐厨房合作烹饪游戏</td>
+    <td class="col-rating rating-high">89%</td>
+    <td class="col-fun">★★★★★</td>
+    <td class="col-size">1</td>
+    <td class="col-online"><span class="tag tag-online">本地+在线</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span> <span class="tag tag-mac">Mac</span></td>
+    <td class="col-art">可爱卡通</td>
+    <td class="col-diff diff-medium">中等</td>
+</tr>
+<tr data-online="1" data-mac="1" data-linux="0" data-r90="1" data-hard="0" data-easy="0">
+    <td style="text-align:center;color:#666;">94</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=Overcooked%21%202" target="_blank" title="在 Steam 商店中打开" class="steam-link">Overcooked! 2</a></td>
+    <td class="col-genre">合作/派对</td>
+    <td class="col-gameplay">续作更多菜谱更多混乱欢乐</td>
+    <td class="col-rating rating-high">91%</td>
+    <td class="col-fun">★★★★★</td>
+    <td class="col-size">3</td>
+    <td class="col-online"><span class="tag tag-online">本地+在线</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span> <span class="tag tag-mac">Mac</span></td>
+    <td class="col-art">可爱卡通</td>
+    <td class="col-diff diff-medium">中等</td>
+</tr>
+<tr data-online="0" data-mac="0" data-linux="0" data-r90="0" data-hard="0" data-easy="0">
+    <td style="text-align:center;color:#666;">95</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=PAC-MAN%20CHAMPIONSHIP%20EDITION%202" target="_blank" title="在 Steam 商店中打开" class="steam-link">PAC-MAN CHAMPIONSHIP EDITION 2</a></td>
+    <td class="col-genre">街机/动作</td>
+    <td class="col-gameplay">吃豆人现代高速版霓虹</td>
+    <td class="col-rating rating-high">86%</td>
+    <td class="col-fun">★★★</td>
+    <td class="col-size">3</td>
+    <td class="col-online"><span class="tag tag-offline">单人</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span></td>
+    <td class="col-art">炫彩霓虹</td>
+    <td class="col-diff diff-medium">中等</td>
+</tr>
+<tr data-online="1" data-mac="0" data-linux="0" data-r90="1" data-hard="0" data-easy="0">
+    <td style="text-align:center;color:#666;">96</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=Palworld" target="_blank" title="在 Steam 商店中打开" class="steam-link">Palworld (幻兽帕鲁)</a></td>
+    <td class="col-genre">生存/沙盒</td>
+    <td class="col-gameplay">带枪版宝可梦生存建造+生物收集</td>
+    <td class="col-rating rating-high">93%</td>
+    <td class="col-fun">★★★★</td>
+    <td class="col-size">25</td>
+    <td class="col-online"><span class="tag tag-online">在线</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span></td>
+    <td class="col-art">卡通3D</td>
+    <td class="col-diff diff-medium">中等</td>
+</tr>
+<tr data-online="0" data-mac="1" data-linux="1" data-r90="1" data-hard="0" data-easy="0">
+    <td style="text-align:center;color:#666;">97</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=Papers%2C%20Please" target="_blank" title="在 Steam 商店中打开" class="steam-link">Papers, Please</a></td>
+    <td class="col-genre">模拟/策略</td>
+    <td class="col-gameplay">扮演边境检察官审核文件的道德困境</td>
+    <td class="col-rating rating-high">97%</td>
+    <td class="col-fun">★★★★★</td>
+    <td class="col-size">0.1</td>
+    <td class="col-online"><span class="tag tag-offline">单人</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span> <span class="tag tag-mac">Mac</span> <span class="tag tag-linux">Linux</span></td>
+    <td class="col-art">像素暗黑</td>
+    <td class="col-diff diff-medium">中等</td>
+</tr>
+<tr data-online="0" data-mac="1" data-linux="1" data-r90="1" data-hard="1" data-easy="0">
+    <td style="text-align:center;color:#666;">98</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=Patrick%27s%20Parabox" target="_blank" title="在 Steam 商店中打开" class="steam-link">Patrick's Parabox</a></td>
+    <td class="col-genre">解谜/逻辑</td>
+    <td class="col-gameplay">递归套娃式推箱子解谜神作</td>
+    <td class="col-rating rating-high">98%</td>
+    <td class="col-fun">★★★★★</td>
+    <td class="col-size">0.1</td>
+    <td class="col-online"><span class="tag tag-offline">单人</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span> <span class="tag tag-mac">Mac</span> <span class="tag tag-linux">Linux</span></td>
+    <td class="col-art">极简几何</td>
+    <td class="col-diff diff-extreme">极难</td>
+</tr>
+<tr data-online="1" data-mac="0" data-linux="0" data-r90="0" data-hard="0" data-easy="0">
+    <td style="text-align:center;color:#666;">99</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=PAYDAY%202" target="_blank" title="在 Steam 商店中打开" class="steam-link">PAYDAY 2</a></td>
+    <td class="col-genre">FPS/合作</td>
+    <td class="col-gameplay">四人合作抢劫银行的射击游戏</td>
+    <td class="col-rating rating-high">89%</td>
+    <td class="col-fun">★★★★</td>
+    <td class="col-size">80</td>
+    <td class="col-online"><span class="tag tag-online">在线</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span></td>
+    <td class="col-art">写实</td>
+    <td class="col-diff diff-medium">中等</td>
+</tr>
+<tr data-online="0" data-mac="0" data-linux="0" data-r90="0" data-hard="0" data-easy="0">
+    <td style="text-align:center;color:#666;">100</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=PEAK" target="_blank" title="在 Steam 商店中打开" class="steam-link">PEAK</a></td>
+    <td class="col-genre">平台/动作</td>
+    <td class="col-gameplay">极简图形精准跳跃平台</td>
+    <td class="col-rating rating-mid">80%</td>
+    <td class="col-fun">★★★</td>
+    <td class="col-size">0.2</td>
+    <td class="col-online"><span class="tag tag-offline">单人</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span></td>
+    <td class="col-art">极简</td>
+    <td class="col-diff diff-hard">困难</td>
+</tr>
+<tr data-online="1" data-mac="1" data-linux="0" data-r90="1" data-hard="0" data-easy="0">
+    <td style="text-align:center;color:#666;">101</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=PICO%20PARK%3A%20Classic%20Edition" target="_blank" title="在 Steam 商店中打开" class="steam-link">PICO PARK: Classic Edition</a></td>
+    <td class="col-genre">合作/派对</td>
+    <td class="col-gameplay">极简像素画风多人合作解谜</td>
+    <td class="col-rating rating-high">90%</td>
+    <td class="col-fun">★★★★</td>
+    <td class="col-size">0.1</td>
+    <td class="col-online"><span class="tag tag-online">本地</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span> <span class="tag tag-mac">Mac</span></td>
+    <td class="col-art">极简像素</td>
+    <td class="col-diff diff-medium">中等</td>
+</tr>
+<tr data-online="0" data-mac="1" data-linux="0" data-r90="1" data-hard="0" data-easy="0">
+    <td style="text-align:center;color:#666;">102</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=Plague%20Inc%3A%20Evolved" target="_blank" title="在 Steam 商店中打开" class="steam-link">Plague Inc: Evolved</a></td>
+    <td class="col-genre">策略/模拟</td>
+    <td class="col-gameplay">设计病毒消灭全人类的策略模拟</td>
+    <td class="col-rating rating-high">93%</td>
+    <td class="col-fun">★★★★</td>
+    <td class="col-size">0.5</td>
+    <td class="col-online"><span class="tag tag-offline">单人</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span> <span class="tag tag-mac">Mac</span></td>
+    <td class="col-art">简洁界面</td>
+    <td class="col-diff diff-medium">中等</td>
+</tr>
+<tr data-online="0" data-mac="1" data-linux="0" data-r90="1" data-hard="0" data-easy="1">
+    <td style="text-align:center;color:#666;">103</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=Plants%20vs.%20Zombies%3A%20GOTY" target="_blank" title="在 Steam 商店中打开" class="steam-link">Plants vs. Zombies: GOTY</a></td>
+    <td class="col-genre">塔防/休闲</td>
+    <td class="col-gameplay">经典植物大战僵尸年度版</td>
+    <td class="col-rating rating-high">97%</td>
+    <td class="col-fun">★★★★★</td>
+    <td class="col-size">0.1</td>
+    <td class="col-online"><span class="tag tag-offline">单人</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span> <span class="tag tag-mac">Mac</span></td>
+    <td class="col-art">可爱卡通</td>
+    <td class="col-diff diff-easy">简单</td>
+</tr>
+<tr data-online="0" data-mac="1" data-linux="1" data-r90="0" data-hard="0" data-easy="0">
+    <td style="text-align:center;color:#666;">104</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=Poly%20Bridge" target="_blank" title="在 Steam 商店中打开" class="steam-link">Poly Bridge</a></td>
+    <td class="col-genre">模拟/解谜</td>
+    <td class="col-gameplay">搭建桥梁的物理模拟解谜</td>
+    <td class="col-rating rating-high">89%</td>
+    <td class="col-fun">★★★★</td>
+    <td class="col-size">0.3</td>
+    <td class="col-online"><span class="tag tag-offline">单人</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span> <span class="tag tag-mac">Mac</span> <span class="tag tag-linux">Linux</span></td>
+    <td class="col-art">低多边形</td>
+    <td class="col-diff diff-hard">中等偏难</td>
+</tr>
+<tr data-online="0" data-mac="1" data-linux="1" data-r90="1" data-hard="0" data-easy="0">
+    <td style="text-align:center;color:#666;">105</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=Poly%20Bridge%202" target="_blank" title="在 Steam 商店中打开" class="steam-link">Poly Bridge 2</a></td>
+    <td class="col-genre">模拟/解谜</td>
+    <td class="col-gameplay">续作更多桥梁材料和挑战</td>
+    <td class="col-rating rating-high">91%</td>
+    <td class="col-fun">★★★★</td>
+    <td class="col-size">0.5</td>
+    <td class="col-online"><span class="tag tag-offline">单人</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span> <span class="tag tag-mac">Mac</span> <span class="tag tag-linux">Linux</span></td>
+    <td class="col-art">低多边形</td>
+    <td class="col-diff diff-hard">中等偏难</td>
+</tr>
+<tr data-online="0" data-mac="1" data-linux="1" data-r90="0" data-hard="0" data-easy="0">
+    <td style="text-align:center;color:#666;">106</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=Polyball" target="_blank" title="在 Steam 商店中打开" class="steam-link">Polyball</a></td>
+    <td class="col-genre">竞速/动作</td>
+    <td class="col-gameplay">滚球跑酷霓虹平台游戏</td>
+    <td class="col-rating rating-high">88%</td>
+    <td class="col-fun">★★★</td>
+    <td class="col-size">1</td>
+    <td class="col-online"><span class="tag tag-offline">单人</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span> <span class="tag tag-mac">Mac</span> <span class="tag tag-linux">Linux</span></td>
+    <td class="col-art">低多边形霓虹</td>
+    <td class="col-diff diff-medium">中等</td>
+</tr>
+<tr data-online="0" data-mac="1" data-linux="1" data-r90="1" data-hard="0" data-easy="0">
+    <td style="text-align:center;color:#666;">107</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=Pony%20Island" target="_blank" title="在 Steam 商店中打开" class="steam-link">Pony Island</a></td>
+    <td class="col-genre">解谜/元游戏</td>
+    <td class="col-gameplay">披着小马外衣的黑暗meta游戏</td>
+    <td class="col-rating rating-high">93%</td>
+    <td class="col-fun">★★★★</td>
+    <td class="col-size">0.3</td>
+    <td class="col-online"><span class="tag tag-offline">单人</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span> <span class="tag tag-mac">Mac</span> <span class="tag tag-linux">Linux</span></td>
+    <td class="col-art">像素暗黑</td>
+    <td class="col-diff diff-medium">中等</td>
+</tr>
+<tr data-online="0" data-mac="1" data-linux="1" data-r90="1" data-hard="0" data-easy="0">
+    <td style="text-align:center;color:#666;">108</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=Portal" target="_blank" title="在 Steam 商店中打开" class="steam-link">Portal</a></td>
+    <td class="col-genre">解谜/FPS</td>
+    <td class="col-gameplay">开创性空间传送门第一人称解谜</td>
+    <td class="col-rating rating-high">98%</td>
+    <td class="col-fun">★★★★★</td>
+    <td class="col-size">5</td>
+    <td class="col-online"><span class="tag tag-offline">单人</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span> <span class="tag tag-mac">Mac</span> <span class="tag tag-linux">Linux</span></td>
+    <td class="col-art">科幻极简</td>
+    <td class="col-diff diff-medium">中等</td>
+</tr>
+<tr data-online="1" data-mac="1" data-linux="1" data-r90="1" data-hard="0" data-easy="0">
+    <td style="text-align:center;color:#666;">109</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=Portal%202" target="_blank" title="在 Steam 商店中打开" class="steam-link">Portal 2</a></td>
+    <td class="col-genre">解谜/FPS</td>
+    <td class="col-gameplay">续作更精彩传送门+合作模式</td>
+    <td class="col-rating rating-high">99%</td>
+    <td class="col-fun">★★★★★</td>
+    <td class="col-size">10</td>
+    <td class="col-online"><span class="tag tag-online">合作</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span> <span class="tag tag-mac">Mac</span> <span class="tag tag-linux">Linux</span></td>
+    <td class="col-art">科幻极简</td>
+    <td class="col-diff diff-medium">中等</td>
+</tr>
+<tr data-online="1" data-mac="0" data-linux="0" data-r90="0" data-hard="0" data-easy="0">
+    <td style="text-align:center;color:#666;">110</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=Project%20Winter" target="_blank" title="在 Steam 商店中打开" class="steam-link">Project Winter</a></td>
+    <td class="col-genre">社交/生存</td>
+    <td class="col-gameplay">8人雪山生存社交推理背叛游戏</td>
+    <td class="col-rating rating-mid">83%</td>
+    <td class="col-fun">★★★★</td>
+    <td class="col-size">3</td>
+    <td class="col-online"><span class="tag tag-online">在线</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span></td>
+    <td class="col-art">低多边形</td>
+    <td class="col-diff diff-medium">中等</td>
+</tr>
+<tr data-online="0" data-mac="0" data-linux="0" data-r90="0" data-hard="0" data-easy="0">
+    <td style="text-align:center;color:#666;">111</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=Prove%20You%20Can%20Win" target="_blank" title="在 Steam 商店中打开" class="steam-link">Prove You Can Win</a></td>
+    <td class="col-genre">平台/挑战</td>
+    <td class="col-gameplay">极简图形精准跳台挑战</td>
+    <td class="col-rating rating-mid">80%</td>
+    <td class="col-fun">★★★</td>
+    <td class="col-size">0.2</td>
+    <td class="col-online"><span class="tag tag-offline">单人</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span></td>
+    <td class="col-art">极简</td>
+    <td class="col-diff diff-hard">困难</td>
+</tr>
+<tr data-online="1" data-mac="0" data-linux="0" data-r90="1" data-hard="0" data-easy="0">
+    <td style="text-align:center;color:#666;">112</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=Raft" target="_blank" title="在 Steam 商店中打开" class="steam-link">Raft</a></td>
+    <td class="col-genre">生存/沙盒</td>
+    <td class="col-gameplay">海洋漂浮收集垃圾扩展木筏</td>
+    <td class="col-rating rating-high">93%</td>
+    <td class="col-fun">★★★★★</td>
+    <td class="col-size">5</td>
+    <td class="col-online"><span class="tag tag-online">在线</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span></td>
+    <td class="col-art">低多边形</td>
+    <td class="col-diff diff-medium">中等</td>
+</tr>
+<tr data-online="0" data-mac="1" data-linux="0" data-r90="1" data-hard="0" data-easy="0">
+    <td style="text-align:center;color:#666;">113</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=Railbound" target="_blank" title="在 Steam 商店中打开" class="steam-link">Railbound</a></td>
+    <td class="col-genre">解谜/休闲</td>
+    <td class="col-gameplay">铺设铁轨让火车到达终点的可爱解谜</td>
+    <td class="col-rating rating-high">96%</td>
+    <td class="col-fun">★★★★</td>
+    <td class="col-size">0.3</td>
+    <td class="col-online"><span class="tag tag-offline">单人</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span> <span class="tag tag-mac">Mac</span></td>
+    <td class="col-art">可爱漫画</td>
+    <td class="col-diff diff-medium">中等</td>
+</tr>
+<tr data-online="0" data-mac="0" data-linux="0" data-r90="0" data-hard="0" data-easy="0">
+    <td style="text-align:center;color:#666;">114</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=Red%20Gate" target="_blank" title="在 Steam 商店中打开" class="steam-link">Red Gate</a></td>
+    <td class="col-genre">动作/平台</td>
+    <td class="col-gameplay">像素横版动作闯关</td>
+    <td class="col-rating rating-mid">78%</td>
+    <td class="col-fun">★★★</td>
+    <td class="col-size">0.5</td>
+    <td class="col-online"><span class="tag tag-offline">单人</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span></td>
+    <td class="col-art">像素</td>
+    <td class="col-diff diff-medium">中等</td>
+</tr>
+<tr data-online="1" data-mac="0" data-linux="0" data-r90="0" data-hard="0" data-easy="0">
+    <td style="text-align:center;color:#666;">115</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=Redeemer" target="_blank" title="在 Steam 商店中打开" class="steam-link">Redeemer</a></td>
+    <td class="col-genre">动作/格斗</td>
+    <td class="col-gameplay">俯视视角暴力清版动作游戏</td>
+    <td class="col-rating rating-mid">84%</td>
+    <td class="col-fun">★★★</td>
+    <td class="col-size">2</td>
+    <td class="col-online"><span class="tag tag-online">本地</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span></td>
+    <td class="col-art">写实</td>
+    <td class="col-diff diff-medium">中等</td>
+</tr>
+<tr data-online="0" data-mac="1" data-linux="0" data-r90="1" data-hard="1" data-easy="0">
+    <td style="text-align:center;color:#666;">116</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=Return%20of%20the%20Obra%20Dinn" target="_blank" title="在 Steam 商店中打开" class="steam-link">Return of the Obra Dinn</a></td>
+    <td class="col-genre">解谜/推理</td>
+    <td class="col-gameplay">1-bit画风保险调查员推理神作</td>
+    <td class="col-rating rating-high">97%</td>
+    <td class="col-fun">★★★★★</td>
+    <td class="col-size">0.5</td>
+    <td class="col-online"><span class="tag tag-offline">单人</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span> <span class="tag tag-mac">Mac</span></td>
+    <td class="col-art">1-bit复古</td>
+    <td class="col-diff diff-extreme">极难</td>
+</tr>
+<tr data-online="0" data-mac="1" data-linux="1" data-r90="1" data-hard="0" data-easy="0">
+    <td style="text-align:center;color:#666;">117</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=Rise%20of%20the%20Tomb%20Raider" target="_blank" title="在 Steam 商店中打开" class="steam-link">Rise of the Tomb Raider</a></td>
+    <td class="col-genre">动作冒险</td>
+    <td class="col-gameplay">劳拉西伯利亚古墓探险</td>
+    <td class="col-rating rating-high">93%</td>
+    <td class="col-fun">★★★★</td>
+    <td class="col-size">25</td>
+    <td class="col-online"><span class="tag tag-offline">单人</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span> <span class="tag tag-mac">Mac</span> <span class="tag tag-linux">Linux</span></td>
+    <td class="col-art">写实3D</td>
+    <td class="col-diff diff-medium">中等</td>
+</tr>
+<tr data-online="0" data-mac="1" data-linux="0" data-r90="1" data-hard="0" data-easy="0">
+    <td style="text-align:center;color:#666;">118</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=RollerCoaster%20Tycoon%20Classic" target="_blank" title="在 Steam 商店中打开" class="steam-link">RollerCoaster Tycoon Classic</a></td>
+    <td class="col-genre">模拟/策略</td>
+    <td class="col-gameplay">经典过山车主题公园经营模拟</td>
+    <td class="col-rating rating-high">95%</td>
+    <td class="col-fun">★★★★★</td>
+    <td class="col-size">0.5</td>
+    <td class="col-online"><span class="tag tag-offline">单人</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span> <span class="tag tag-mac">Mac</span></td>
+    <td class="col-art">经典2D</td>
+    <td class="col-diff diff-medium">中等</td>
+</tr>
+<tr data-online="0" data-mac="0" data-linux="0" data-r90="0" data-hard="0" data-easy="0">
+    <td style="text-align:center;color:#666;">119</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=Run%20Build%20Pew%21" target="_blank" title="在 Steam 商店中打开" class="steam-link">Run Build Pew!</a></td>
+    <td class="col-genre">动作/射击</td>
+    <td class="col-gameplay">快节奏俯视射击建造游戏</td>
+    <td class="col-rating rating-mid">82%</td>
+    <td class="col-fun">★★★</td>
+    <td class="col-size">0.3</td>
+    <td class="col-online"><span class="tag tag-offline">单人</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span></td>
+    <td class="col-art">像素</td>
+    <td class="col-diff diff-medium">中等</td>
+</tr>
+<tr data-online="0" data-mac="0" data-linux="0" data-r90="0" data-hard="0" data-easy="1">
+    <td style="text-align:center;color:#666;">120</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=Russian%20Life%20Simulator" target="_blank" title="在 Steam 商店中打开" class="steam-link">Russian Life Simulator</a></td>
+    <td class="col-genre">模拟/搞笑</td>
+    <td class="col-gameplay">俄罗斯生活搞笑模拟器</td>
+    <td class="col-rating rating-mid">72%</td>
+    <td class="col-fun">★★★</td>
+    <td class="col-size">1</td>
+    <td class="col-online"><span class="tag tag-offline">单人</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span></td>
+    <td class="col-art">简陋3D</td>
+    <td class="col-diff diff-easy">简单</td>
+</tr>
+<tr data-online="0" data-mac="1" data-linux="0" data-r90="1" data-hard="0" data-easy="0">
+    <td style="text-align:center;color:#666;">121</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=Rusty%20Lake%20Hotel" target="_blank" title="在 Steam 商店中打开" class="steam-link">Rusty Lake Hotel</a></td>
+    <td class="col-genre">解谜/恐怖</td>
+    <td class="col-gameplay">诡异酒店五个神秘客人谋杀谜题</td>
+    <td class="col-rating rating-high">93%</td>
+    <td class="col-fun">★★★★</td>
+    <td class="col-size">0.2</td>
+    <td class="col-online"><span class="tag tag-offline">单人</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span> <span class="tag tag-mac">Mac</span></td>
+    <td class="col-art">诡异手绘</td>
+    <td class="col-diff diff-medium">中等</td>
+</tr>
+<tr data-online="0" data-mac="1" data-linux="0" data-r90="1" data-hard="0" data-easy="0">
+    <td style="text-align:center;color:#666;">122</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=Rusty%20Lake%20Paradise" target="_blank" title="在 Steam 商店中打开" class="steam-link">Rusty Lake Paradise</a></td>
+    <td class="col-genre">解谜/恐怖</td>
+    <td class="col-gameplay">瘟疫主题岛屿的暗黑解谜</td>
+    <td class="col-rating rating-high">93%</td>
+    <td class="col-fun">★★★★</td>
+    <td class="col-size">0.2</td>
+    <td class="col-online"><span class="tag tag-offline">单人</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span> <span class="tag tag-mac">Mac</span></td>
+    <td class="col-art">诡异手绘</td>
+    <td class="col-diff diff-medium">中等</td>
+</tr>
+<tr data-online="0" data-mac="1" data-linux="0" data-r90="1" data-hard="0" data-easy="0">
+    <td style="text-align:center;color:#666;">123</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=Rusty%20Lake%3A%20Roots" target="_blank" title="在 Steam 商店中打开" class="steam-link">Rusty Lake: Roots</a></td>
+    <td class="col-genre">解谜/恐怖</td>
+    <td class="col-gameplay">家族树的黑暗秘密解谜</td>
+    <td class="col-rating rating-high">94%</td>
+    <td class="col-fun">★★★★</td>
+    <td class="col-size">0.2</td>
+    <td class="col-online"><span class="tag tag-offline">单人</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span> <span class="tag tag-mac">Mac</span></td>
+    <td class="col-art">诡异手绘</td>
+    <td class="col-diff diff-medium">中等</td>
+</tr>
+<tr data-online="1" data-mac="1" data-linux="0" data-r90="1" data-hard="0" data-easy="0">
+    <td style="text-align:center;color:#666;">124</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=Salt%20and%20Sanctuary" target="_blank" title="在 Steam 商店中打开" class="steam-link">Salt and Sanctuary</a></td>
+    <td class="col-genre">动作RPG/魂系</td>
+    <td class="col-gameplay">2D横版类魂动作RPG</td>
+    <td class="col-rating rating-high">90%</td>
+    <td class="col-fun">★★★★</td>
+    <td class="col-size">0.5</td>
+    <td class="col-online"><span class="tag tag-online">本地</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span> <span class="tag tag-mac">Mac</span></td>
+    <td class="col-art">暗黑手绘</td>
+    <td class="col-diff diff-hard">困难</td>
+</tr>
+<tr data-online="0" data-mac="1" data-linux="0" data-r90="0" data-hard="0" data-easy="0">
+    <td style="text-align:center;color:#666;">125</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=Samorost%202" target="_blank" title="在 Steam 商店中打开" class="steam-link">Samorost 2</a></td>
+    <td class="col-genre">解谜/冒险</td>
+    <td class="col-gameplay">点击冒险探索奇异外星世界</td>
+    <td class="col-rating rating-high">88%</td>
+    <td class="col-fun">★★★★</td>
+    <td class="col-size">0.2</td>
+    <td class="col-online"><span class="tag tag-offline">单人</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span> <span class="tag tag-mac">Mac</span></td>
+    <td class="col-art">手绘拼贴</td>
+    <td class="col-diff diff-medium">中等</td>
+</tr>
+<tr data-online="0" data-mac="0" data-linux="0" data-r90="1" data-hard="1" data-easy="0">
+    <td style="text-align:center;color:#666;">126</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=Sekiro%3A%20Shadows%20Die%20Twice" target="_blank" title="在 Steam 商店中打开" class="steam-link">Sekiro: Shadows Die Twice</a></td>
+    <td class="col-genre">动作/魂系</td>
+    <td class="col-gameplay">日本战国忍者弹刀系统动作游戏</td>
+    <td class="col-rating rating-high">95%</td>
+    <td class="col-fun">★★★★★</td>
+    <td class="col-size">25</td>
+    <td class="col-online"><span class="tag tag-offline">单人</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span></td>
+    <td class="col-art">写实</td>
+    <td class="col-diff diff-extreme">极难</td>
+</tr>
+<tr data-online="0" data-mac="0" data-linux="0" data-r90="0" data-hard="0" data-easy="0">
+    <td style="text-align:center;color:#666;">127</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=Showdown%20Bandit" target="_blank" title="在 Steam 商店中打开" class="steam-link">Showdown Bandit</a></td>
+    <td class="col-genre">恐怖/冒险</td>
+    <td class="col-gameplay">废弃西部儿童节目主题恐怖游戏</td>
+    <td class="col-rating rating-mid">73%</td>
+    <td class="col-fun">★★★</td>
+    <td class="col-size">2</td>
+    <td class="col-online"><span class="tag tag-offline">单人</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span></td>
+    <td class="col-art">暗黑西部</td>
+    <td class="col-diff diff-medium">中等</td>
+</tr>
+<tr data-online="1" data-mac="1" data-linux="1" data-r90="0" data-hard="0" data-easy="0">
+    <td style="text-align:center;color:#666;">128</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=Sid%20Meier%27s%20Civilization%20VI" target="_blank" title="在 Steam 商店中打开" class="steam-link">Sid Meier's Civilization VI</a></td>
+    <td class="col-genre">策略/4X</td>
+    <td class="col-gameplay">回合制文明建造帝国大战略</td>
+    <td class="col-rating rating-high">86%</td>
+    <td class="col-fun">★★★★★</td>
+    <td class="col-size">15</td>
+    <td class="col-online"><span class="tag tag-online">在线</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span> <span class="tag tag-mac">Mac</span> <span class="tag tag-linux">Linux</span></td>
+    <td class="col-art">写实</td>
+    <td class="col-diff diff-hard">中等偏难</td>
+</tr>
+<tr data-online="0" data-mac="1" data-linux="0" data-r90="1" data-hard="0" data-easy="0">
+    <td style="text-align:center;color:#666;">129</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=Skul%3A%20The%20Hero%20Slayer" target="_blank" title="在 Steam 商店中打开" class="steam-link">Skul: The Hero Slayer</a></td>
+    <td class="col-genre">动作/Roguelike</td>
+    <td class="col-gameplay">小骷髅换头变身的横版动作Roguelike</td>
+    <td class="col-rating rating-high">93%</td>
+    <td class="col-fun">★★★★</td>
+    <td class="col-size">2</td>
+    <td class="col-online"><span class="tag tag-offline">单人</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span> <span class="tag tag-mac">Mac</span></td>
+    <td class="col-art">像素</td>
+    <td class="col-diff diff-hard">困难</td>
+</tr>
+<tr data-online="0" data-mac="1" data-linux="1" data-r90="1" data-hard="0" data-easy="0">
+    <td style="text-align:center;color:#666;">130</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=Slay%20the%20Spire" target="_blank" title="在 Steam 商店中打开" class="steam-link">Slay the Spire</a></td>
+    <td class="col-genre">卡牌/Roguelike</td>
+    <td class="col-gameplay">开创性卡牌构建Roguelike神作</td>
+    <td class="col-rating rating-high">97%</td>
+    <td class="col-fun">★★★★★</td>
+    <td class="col-size">0.5</td>
+    <td class="col-online"><span class="tag tag-offline">单人</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span> <span class="tag tag-mac">Mac</span> <span class="tag tag-linux">Linux</span></td>
+    <td class="col-art">漫画风</td>
+    <td class="col-diff diff-hard">困难</td>
+</tr>
+<tr data-online="0" data-mac="0" data-linux="0" data-r90="1" data-hard="0" data-easy="0">
+    <td style="text-align:center;color:#666;">131</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=Slay%20the%20Spire%202" target="_blank" title="在 Steam 商店中打开" class="steam-link">Slay the Spire 2</a></td>
+    <td class="col-genre">卡牌/Roguelike</td>
+    <td class="col-gameplay">续作更多角色卡牌深度策略</td>
+    <td class="col-rating rating-high">92%</td>
+    <td class="col-fun">★★★★★</td>
+    <td class="col-size">2</td>
+    <td class="col-online"><span class="tag tag-offline">单人</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span></td>
+    <td class="col-art">漫画风</td>
+    <td class="col-diff diff-hard">困难</td>
+</tr>
+<tr data-online="1" data-mac="0" data-linux="0" data-r90="0" data-hard="0" data-easy="0">
+    <td style="text-align:center;color:#666;">132</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=Sniper%3A%20Ghost%20Warrior" target="_blank" title="在 Steam 商店中打开" class="steam-link">Sniper: Ghost Warrior</a></td>
+    <td class="col-genre">FPS/狙击</td>
+    <td class="col-gameplay">狙击手主题第一人称射击</td>
+    <td class="col-rating rating-mid">70%</td>
+    <td class="col-fun">★★★</td>
+    <td class="col-size">10</td>
+    <td class="col-online"><span class="tag tag-online">支持</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span></td>
+    <td class="col-art">写实3D</td>
+    <td class="col-diff diff-hard">中等偏难</td>
+</tr>
+<tr data-online="0" data-mac="1" data-linux="1" data-r90="1" data-hard="0" data-easy="0">
+    <td style="text-align:center;color:#666;">133</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=Sokobond" target="_blank" title="在 Steam 商店中打开" class="steam-link">Sokobond</a></td>
+    <td class="col-genre">解谜/逻辑</td>
+    <td class="col-gameplay">化学分子式推箱子优雅解谜</td>
+    <td class="col-rating rating-high">95%</td>
+    <td class="col-fun">★★★★</td>
+    <td class="col-size">0.1</td>
+    <td class="col-online"><span class="tag tag-offline">单人</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span> <span class="tag tag-mac">Mac</span> <span class="tag tag-linux">Linux</span></td>
+    <td class="col-art">极简优雅</td>
+    <td class="col-diff diff-hard">困难</td>
+</tr>
+<tr data-online="0" data-mac="1" data-linux="1" data-r90="1" data-hard="1" data-easy="0">
+    <td style="text-align:center;color:#666;">134</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=SpaceChem" target="_blank" title="在 Steam 商店中打开" class="steam-link">SpaceChem</a></td>
+    <td class="col-genre">解谜/编程</td>
+    <td class="col-gameplay">用化学反应流水线解决谜题</td>
+    <td class="col-rating rating-high">95%</td>
+    <td class="col-fun">★★★★★</td>
+    <td class="col-size">0.3</td>
+    <td class="col-online"><span class="tag tag-offline">单人</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span> <span class="tag tag-mac">Mac</span> <span class="tag tag-linux">Linux</span></td>
+    <td class="col-art">极简科幻</td>
+    <td class="col-diff diff-extreme">极难</td>
+</tr>
+<tr data-online="0" data-mac="1" data-linux="0" data-r90="0" data-hard="0" data-easy="1">
+    <td style="text-align:center;color:#666;">135</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=SPACEPLAN" target="_blank" title="在 Steam 商店中打开" class="steam-link">SPACEPLAN</a></td>
+    <td class="col-genre">放置/科幻</td>
+    <td class="col-gameplay">点击放置类星际探索故事</td>
+    <td class="col-rating rating-high">87%</td>
+    <td class="col-fun">★★★</td>
+    <td class="col-size">0.2</td>
+    <td class="col-online"><span class="tag tag-offline">单人</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span> <span class="tag tag-mac">Mac</span></td>
+    <td class="col-art">极简科幻</td>
+    <td class="col-diff diff-easy">简单</td>
+</tr>
+<tr data-online="1" data-mac="1" data-linux="1" data-r90="1" data-hard="0" data-easy="1">
+    <td style="text-align:center;color:#666;">136</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=Spiritfarer" target="_blank" title="在 Steam 商店中打开" class="steam-link">Spiritfarer</a></td>
+    <td class="col-genre">经营/情感</td>
+    <td class="col-gameplay">扮演灵魂摆渡人照顾亡灵的温馨经营</td>
+    <td class="col-rating rating-high">96%</td>
+    <td class="col-fun">★★★★★</td>
+    <td class="col-size">5</td>
+    <td class="col-online"><span class="tag tag-online">本地</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span> <span class="tag tag-mac">Mac</span> <span class="tag tag-linux">Linux</span></td>
+    <td class="col-art">精美手绘</td>
+    <td class="col-diff diff-easy">简单</td>
+</tr>
+<tr data-online="0" data-mac="1" data-linux="0" data-r90="1" data-hard="0" data-easy="0">
+    <td style="text-align:center;color:#666;">137</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=Stacklands" target="_blank" title="在 Steam 商店中打开" class="steam-link">Stacklands</a></td>
+    <td class="col-genre">卡牌/生存</td>
+    <td class="col-gameplay">用卡牌堆叠建造村庄的独特生存</td>
+    <td class="col-rating rating-high">96%</td>
+    <td class="col-fun">★★★★</td>
+    <td class="col-size">0.2</td>
+    <td class="col-online"><span class="tag tag-offline">单人</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span> <span class="tag tag-mac">Mac</span></td>
+    <td class="col-art">极简卡牌</td>
+    <td class="col-diff diff-medium">中等</td>
+</tr>
+<tr data-online="1" data-mac="1" data-linux="1" data-r90="1" data-hard="0" data-easy="1">
+    <td style="text-align:center;color:#666;">138</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=Stardew%20Valley" target="_blank" title="在 Steam 商店中打开" class="steam-link">Stardew Valley</a></td>
+    <td class="col-genre">模拟/RPG</td>
+    <td class="col-gameplay">像素农场经营恋爱挖矿生活模拟</td>
+    <td class="col-rating rating-high">98%</td>
+    <td class="col-fun">★★★★★</td>
+    <td class="col-size">0.5</td>
+    <td class="col-online"><span class="tag tag-online">在线</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span> <span class="tag tag-mac">Mac</span> <span class="tag tag-linux">Linux</span></td>
+    <td class="col-art">像素可爱</td>
+    <td class="col-diff diff-easy">简单</td>
+</tr>
+<tr data-online="1" data-mac="1" data-linux="1" data-r90="0" data-hard="0" data-easy="0">
+    <td style="text-align:center;color:#666;">139</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=Stellaris" target="_blank" title="在 Steam 商店中打开" class="steam-link">Stellaris</a></td>
+    <td class="col-genre">策略/4X</td>
+    <td class="col-gameplay">太空科幻大战略银河帝国建造</td>
+    <td class="col-rating rating-high">86%</td>
+    <td class="col-fun">★★★★★</td>
+    <td class="col-size">15</td>
+    <td class="col-online"><span class="tag tag-online">在线</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span> <span class="tag tag-mac">Mac</span> <span class="tag tag-linux">Linux</span></td>
+    <td class="col-art">科幻写实</td>
+    <td class="col-diff diff-hard">困难</td>
+</tr>
+<tr data-online="1" data-mac="1" data-linux="0" data-r90="1" data-hard="0" data-easy="1">
+    <td style="text-align:center;color:#666;">140</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=Stick%20Fight%3A%20The%20Game" target="_blank" title="在 Steam 商店中打开" class="steam-link">Stick Fight: The Game</a></td>
+    <td class="col-genre">格斗/派对</td>
+    <td class="col-gameplay">火柴人物理格斗大乱斗</td>
+    <td class="col-rating rating-high">95%</td>
+    <td class="col-fun">★★★★</td>
+    <td class="col-size">0.3</td>
+    <td class="col-online"><span class="tag tag-online">在线</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span> <span class="tag tag-mac">Mac</span></td>
+    <td class="col-art">火柴人</td>
+    <td class="col-diff diff-easy">简单</td>
+</tr>
+<tr data-online="0" data-mac="1" data-linux="0" data-r90="1" data-hard="0" data-easy="1">
+    <td style="text-align:center;color:#666;">141</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=Stray" target="_blank" title="在 Steam 商店中打开" class="steam-link">Stray</a></td>
+    <td class="col-genre">冒险/探索</td>
+    <td class="col-gameplay">扮演一只猫探索赛博朋克城市</td>
+    <td class="col-rating rating-high">97%</td>
+    <td class="col-fun">★★★★★</td>
+    <td class="col-size">10</td>
+    <td class="col-online"><span class="tag tag-offline">单人</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span> <span class="tag tag-mac">Mac</span></td>
+    <td class="col-art">写实赛博朋克</td>
+    <td class="col-diff diff-easy">简单</td>
+</tr>
+<tr data-online="0" data-mac="1" data-linux="0" data-r90="1" data-hard="0" data-easy="0">
+    <td style="text-align:center;color:#666;">142</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=Superliminal" target="_blank" title="在 Steam 商店中打开" class="steam-link">Superliminal</a></td>
+    <td class="col-genre">解谜/视角</td>
+    <td class="col-gameplay">强迫透视视觉错觉第一人称解谜</td>
+    <td class="col-rating rating-high">94%</td>
+    <td class="col-fun">★★★★</td>
+    <td class="col-size">10</td>
+    <td class="col-online"><span class="tag tag-offline">单人</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span> <span class="tag tag-mac">Mac</span></td>
+    <td class="col-art">简约3D</td>
+    <td class="col-diff diff-medium">中等</td>
+</tr>
+<tr data-online="1" data-mac="1" data-linux="1" data-r90="1" data-hard="0" data-easy="0">
+    <td style="text-align:center;color:#666;">143</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=Terraria" target="_blank" title="在 Steam 商店中打开" class="steam-link">Terraria</a></td>
+    <td class="col-genre">沙盒/冒险</td>
+    <td class="col-gameplay">2D像素沙盒生存冒险建造探索</td>
+    <td class="col-rating rating-high">97%</td>
+    <td class="col-fun">★★★★★</td>
+    <td class="col-size">0.5</td>
+    <td class="col-online"><span class="tag tag-online">在线</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span> <span class="tag tag-mac">Mac</span> <span class="tag tag-linux">Linux</span></td>
+    <td class="col-art">像素</td>
+    <td class="col-diff diff-hard">中等偏难</td>
+</tr>
+<tr data-online="0" data-mac="1" data-linux="0" data-r90="1" data-hard="0" data-easy="0">
+    <td style="text-align:center;color:#666;">144</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=Tetrobot%20and%20Co." target="_blank" title="在 Steam 商店中打开" class="steam-link">Tetrobot and Co.</a></td>
+    <td class="col-genre">解谜/益智</td>
+    <td class="col-gameplay">修理微型机器人的物理方块解谜</td>
+    <td class="col-rating rating-high">93%</td>
+    <td class="col-fun">★★★★</td>
+    <td class="col-size">0.3</td>
+    <td class="col-online"><span class="tag tag-offline">单人</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span> <span class="tag tag-mac">Mac</span></td>
+    <td class="col-art">卡通可爱</td>
+    <td class="col-diff diff-hard">中等偏难</td>
+</tr>
+<tr data-online="1" data-mac="1" data-linux="1" data-r90="1" data-hard="1" data-easy="0">
+    <td style="text-align:center;color:#666;">145</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=The%20Binding%20of%20Isaac%3A%20Rebirth" target="_blank" title="在 Steam 商店中打开" class="steam-link">The Binding of Isaac: Rebirth</a></td>
+    <td class="col-genre">动作/Roguelike</td>
+    <td class="col-gameplay">暗黑宗教主题双摇杆射击Roguelike</td>
+    <td class="col-rating rating-high">97%</td>
+    <td class="col-fun">★★★★★</td>
+    <td class="col-size">0.5</td>
+    <td class="col-online"><span class="tag tag-online">本地</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span> <span class="tag tag-mac">Mac</span> <span class="tag tag-linux">Linux</span></td>
+    <td class="col-art">像素暗黑扭曲</td>
+    <td class="col-diff diff-extreme">极难</td>
+</tr>
+<tr data-online="0" data-mac="1" data-linux="0" data-r90="0" data-hard="0" data-easy="0">
+    <td style="text-align:center;color:#666;">146</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=The%20Bridge" target="_blank" title="在 Steam 商店中打开" class="steam-link">The Bridge</a></td>
+    <td class="col-genre">解谜/平台</td>
+    <td class="col-gameplay">黑白版画风格重力翻转逻辑解谜</td>
+    <td class="col-rating rating-high">85%</td>
+    <td class="col-fun">★★★★</td>
+    <td class="col-size">0.3</td>
+    <td class="col-online"><span class="tag tag-offline">单人</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span> <span class="tag tag-mac">Mac</span></td>
+    <td class="col-art">黑白版画</td>
+    <td class="col-diff diff-hard">困难</td>
+</tr>
+<tr data-online="0" data-mac="1" data-linux="0" data-r90="1" data-hard="1" data-easy="0">
+    <td style="text-align:center;color:#666;">147</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=The%20Case%20of%20the%20Golden%20Idol" target="_blank" title="在 Steam 商店中打开" class="steam-link">The Case of the Golden Idol</a></td>
+    <td class="col-genre">解谜/推理</td>
+    <td class="col-gameplay">18世纪像素风推理侦探游戏</td>
+    <td class="col-rating rating-high">96%</td>
+    <td class="col-fun">★★★★★</td>
+    <td class="col-size">0.3</td>
+    <td class="col-online"><span class="tag tag-offline">单人</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span> <span class="tag tag-mac">Mac</span></td>
+    <td class="col-art">像素复古</td>
+    <td class="col-diff diff-extreme">极难</td>
+</tr>
+<tr data-online="0" data-mac="0" data-linux="0" data-r90="1" data-hard="0" data-easy="0">
+    <td style="text-align:center;color:#666;">148</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=The%20Elder%20Scrolls%20V%3A%20Skyrim%20SE" target="_blank" title="在 Steam 商店中打开" class="steam-link">The Elder Scrolls V: Skyrim SE</a></td>
+    <td class="col-genre">RPG/开放世界</td>
+    <td class="col-gameplay">史诗级开放世界奇幻RPG重制版</td>
+    <td class="col-rating rating-high">94%</td>
+    <td class="col-fun">★★★★★</td>
+    <td class="col-size">20</td>
+    <td class="col-online"><span class="tag tag-offline">单人</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span></td>
+    <td class="col-art">写实奇幻</td>
+    <td class="col-diff diff-medium">中等</td>
+</tr>
+<tr data-online="1" data-mac="0" data-linux="0" data-r90="1" data-hard="0" data-easy="0">
+    <td style="text-align:center;color:#666;">149</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=The%20Forest" target="_blank" title="在 Steam 商店中打开" class="steam-link">The Forest</a></td>
+    <td class="col-genre">恐怖/生存</td>
+    <td class="col-gameplay">孤岛食人族第一人称生存恐怖</td>
+    <td class="col-rating rating-high">93%</td>
+    <td class="col-fun">★★★★</td>
+    <td class="col-size">5</td>
+    <td class="col-online"><span class="tag tag-online">在线</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span></td>
+    <td class="col-art">写实恐怖</td>
+    <td class="col-diff diff-hard">困难</td>
+</tr>
+<tr data-online="0" data-mac="1" data-linux="1" data-r90="0" data-hard="0" data-easy="0">
+    <td style="text-align:center;color:#666;">150</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=The%20Hex" target="_blank" title="在 Steam 商店中打开" class="steam-link">The Hex</a></td>
+    <td class="col-genre">冒险/元游戏</td>
+    <td class="col-gameplay">六个不同游戏角色被谋杀的meta解谜</td>
+    <td class="col-rating rating-high">89%</td>
+    <td class="col-fun">★★★★</td>
+    <td class="col-size">1</td>
+    <td class="col-online"><span class="tag tag-offline">单人</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span> <span class="tag tag-mac">Mac</span> <span class="tag tag-linux">Linux</span></td>
+    <td class="col-art">像素混合</td>
+    <td class="col-diff diff-medium">中等</td>
+</tr>
+<tr data-online="0" data-mac="0" data-linux="0" data-r90="1" data-hard="0" data-easy="0">
+    <td style="text-align:center;color:#666;">151</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=The%20Painscreek%20Killings" target="_blank" title="在 Steam 商店中打开" class="steam-link">The Painscreek Killings</a></td>
+    <td class="col-genre">推理/步行模拟</td>
+    <td class="col-gameplay">废弃小镇调查谋杀案的第一人称推理</td>
+    <td class="col-rating rating-high">90%</td>
+    <td class="col-fun">★★★★</td>
+    <td class="col-size">5</td>
+    <td class="col-online"><span class="tag tag-offline">单人</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span></td>
+    <td class="col-art">写实</td>
+    <td class="col-diff diff-hard">中等偏难</td>
+</tr>
+<tr data-online="1" data-mac="1" data-linux="0" data-r90="1" data-hard="0" data-easy="0">
+    <td style="text-align:center;color:#666;">152</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=The%20Past%20Within" target="_blank" title="在 Steam 商店中打开" class="steam-link">The Past Within</a></td>
+    <td class="col-genre">合作/解谜</td>
+    <td class="col-gameplay">双人跨次元合作Rusty Lake系列</td>
+    <td class="col-rating rating-high">92%</td>
+    <td class="col-fun">★★★★</td>
+    <td class="col-size">0.3</td>
+    <td class="col-online"><span class="tag tag-online">双人</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span> <span class="tag tag-mac">Mac</span></td>
+    <td class="col-art">诡异手绘</td>
+    <td class="col-diff diff-medium">中等</td>
+</tr>
+<tr data-online="0" data-mac="0" data-linux="0" data-r90="1" data-hard="0" data-easy="0">
+    <td style="text-align:center;color:#666;">153</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=The%20Room" target="_blank" title="在 Steam 商店中打开" class="steam-link">The Room</a></td>
+    <td class="col-genre">解谜/密室</td>
+    <td class="col-gameplay">3D物理机关解谜经典</td>
+    <td class="col-rating rating-high">97%</td>
+    <td class="col-fun">★★★★★</td>
+    <td class="col-size">1.5</td>
+    <td class="col-online"><span class="tag tag-offline">单人</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span></td>
+    <td class="col-art">写实唯美</td>
+    <td class="col-diff diff-medium">中等</td>
+</tr>
+<tr data-online="0" data-mac="0" data-linux="0" data-r90="1" data-hard="0" data-easy="0">
+    <td style="text-align:center;color:#666;">154</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=The%20Room%20Three" target="_blank" title="在 Steam 商店中打开" class="steam-link">The Room Three</a></td>
+    <td class="col-genre">解谜/密室</td>
+    <td class="col-gameplay">系列第三部更多复杂物理机关</td>
+    <td class="col-rating rating-high">95%</td>
+    <td class="col-fun">★★★★★</td>
+    <td class="col-size">2</td>
+    <td class="col-online"><span class="tag tag-offline">单人</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span></td>
+    <td class="col-art">写实唯美</td>
+    <td class="col-diff diff-hard">中等偏难</td>
+</tr>
+<tr data-online="0" data-mac="0" data-linux="0" data-r90="1" data-hard="0" data-easy="0">
+    <td style="text-align:center;color:#666;">155</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=The%20Room%204%3A%20Old%20Sins" target="_blank" title="在 Steam 商店中打开" class="steam-link">The Room 4: Old Sins</a></td>
+    <td class="col-genre">解谜/密室</td>
+    <td class="col-gameplay">系列第四部玩具屋谜题</td>
+    <td class="col-rating rating-high">94%</td>
+    <td class="col-fun">★★★★</td>
+    <td class="col-size">2</td>
+    <td class="col-online"><span class="tag tag-offline">单人</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span></td>
+    <td class="col-art">写实唯美</td>
+    <td class="col-diff diff-hard">中等偏难</td>
+</tr>
+<tr data-online="0" data-mac="1" data-linux="1" data-r90="1" data-hard="0" data-easy="1">
+    <td style="text-align:center;color:#666;">156</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=The%20Stanley%20Parable" target="_blank" title="在 Steam 商店中打开" class="steam-link">The Stanley Parable</a></td>
+    <td class="col-genre">冒险/元游戏</td>
+    <td class="col-gameplay">打破第四面墙的叙事实验神作</td>
+    <td class="col-rating rating-high">94%</td>
+    <td class="col-fun">★★★★★</td>
+    <td class="col-size">3</td>
+    <td class="col-online"><span class="tag tag-offline">单人</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span> <span class="tag tag-mac">Mac</span> <span class="tag tag-linux">Linux</span></td>
+    <td class="col-art">Source引擎</td>
+    <td class="col-diff diff-easy">简单</td>
+</tr>
+<tr data-online="0" data-mac="1" data-linux="0" data-r90="0" data-hard="0" data-easy="1">
+    <td style="text-align:center;color:#666;">157</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=The%20Tiny%20Bang%20Story" target="_blank" title="在 Steam 商店中打开" class="steam-link">The Tiny Bang Story</a></td>
+    <td class="col-genre">解谜/冒险</td>
+    <td class="col-gameplay">手绘点击探险解谜</td>
+    <td class="col-rating rating-high">89%</td>
+    <td class="col-fun">★★★</td>
+    <td class="col-size">0.3</td>
+    <td class="col-online"><span class="tag tag-offline">单人</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span> <span class="tag tag-mac">Mac</span></td>
+    <td class="col-art">精美手绘</td>
+    <td class="col-diff diff-easy">简单</td>
+</tr>
+<tr data-online="0" data-mac="0" data-linux="0" data-r90="0" data-hard="0" data-easy="0">
+    <td style="text-align:center;color:#666;">158</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=The%20Uncertain%3A%20Last%20Quiet%20Day" target="_blank" title="在 Steam 商店中打开" class="steam-link">The Uncertain: Last Quiet Day</a></td>
+    <td class="col-genre">冒险/科幻</td>
+    <td class="col-gameplay">机器人主角的后人类科幻冒险</td>
+    <td class="col-rating rating-mid">75%</td>
+    <td class="col-fun">★★★</td>
+    <td class="col-size">5</td>
+    <td class="col-online"><span class="tag tag-offline">单人</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span></td>
+    <td class="col-art">科幻3D</td>
+    <td class="col-diff diff-medium">中等</td>
+</tr>
+<tr data-online="0" data-mac="1" data-linux="0" data-r90="1" data-hard="0" data-easy="1">
+    <td style="text-align:center;color:#666;">159</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=The%20Walking%20Dead" target="_blank" title="在 Steam 商店中打开" class="steam-link">The Walking Dead</a></td>
+    <td class="col-genre">冒险/剧情</td>
+    <td class="col-gameplay">Telltale僵尸末日互动剧情神作</td>
+    <td class="col-rating rating-high">96%</td>
+    <td class="col-fun">★★★★★</td>
+    <td class="col-size">4</td>
+    <td class="col-online"><span class="tag tag-offline">单人</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span> <span class="tag tag-mac">Mac</span></td>
+    <td class="col-art">漫画风格</td>
+    <td class="col-diff diff-easy">简单</td>
+</tr>
+<tr data-online="0" data-mac="1" data-linux="0" data-r90="0" data-hard="0" data-easy="1">
+    <td style="text-align:center;color:#666;">160</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=The%20Walking%20Dead%3A%20Michonne" target="_blank" title="在 Steam 商店中打开" class="steam-link">The Walking Dead: Michonne</a></td>
+    <td class="col-genre">冒险/剧情</td>
+    <td class="col-gameplay">刀女米琼恩的短篇外传</td>
+    <td class="col-rating rating-mid">84%</td>
+    <td class="col-fun">★★★</td>
+    <td class="col-size">3</td>
+    <td class="col-online"><span class="tag tag-offline">单人</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span> <span class="tag tag-mac">Mac</span></td>
+    <td class="col-art">漫画风格</td>
+    <td class="col-diff diff-easy">简单</td>
+</tr>
+<tr data-online="0" data-mac="1" data-linux="0" data-r90="1" data-hard="0" data-easy="1">
+    <td style="text-align:center;color:#666;">161</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=The%20Walking%20Dead%3A%20Season%20Two" target="_blank" title="在 Steam 商店中打开" class="steam-link">The Walking Dead: Season Two</a></td>
+    <td class="col-genre">冒险/剧情</td>
+    <td class="col-gameplay">扮演Clementine的感人续作</td>
+    <td class="col-rating rating-high">95%</td>
+    <td class="col-fun">★★★★★</td>
+    <td class="col-size">4</td>
+    <td class="col-online"><span class="tag tag-offline">单人</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span> <span class="tag tag-mac">Mac</span></td>
+    <td class="col-art">漫画风格</td>
+    <td class="col-diff diff-easy">简单</td>
+</tr>
+<tr data-online="0" data-mac="1" data-linux="0" data-r90="1" data-hard="0" data-easy="1">
+    <td style="text-align:center;color:#666;">162</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=The%20White%20Door" target="_blank" title="在 Steam 商店中打开" class="steam-link">The White Door</a></td>
+    <td class="col-genre">解谜/情感</td>
+    <td class="col-gameplay">黑白分屏的精神病院情感解谜</td>
+    <td class="col-rating rating-high">93%</td>
+    <td class="col-fun">★★★★</td>
+    <td class="col-size">0.2</td>
+    <td class="col-online"><span class="tag tag-offline">单人</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span> <span class="tag tag-mac">Mac</span></td>
+    <td class="col-art">黑白极简</td>
+    <td class="col-diff diff-easy">简单</td>
+</tr>
+<tr data-online="0" data-mac="1" data-linux="0" data-r90="0" data-hard="1" data-easy="0">
+    <td style="text-align:center;color:#666;">163</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=The%20Witness" target="_blank" title="在 Steam 商店中打开" class="steam-link">The Witness</a></td>
+    <td class="col-genre">解谜/探索</td>
+    <td class="col-gameplay">第一人称开放世界线谜解谜</td>
+    <td class="col-rating rating-mid">84%</td>
+    <td class="col-fun">★★★★★</td>
+    <td class="col-size">4</td>
+    <td class="col-online"><span class="tag tag-offline">单人</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span> <span class="tag tag-mac">Mac</span></td>
+    <td class="col-art">唯美开放</td>
+    <td class="col-diff diff-extreme">极难</td>
+</tr>
+<tr data-online="0" data-mac="0" data-linux="0" data-r90="0" data-hard="0" data-easy="0">
+    <td style="text-align:center;color:#666;">164</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=Thief%20Simulator" target="_blank" title="在 Steam 商店中打开" class="steam-link">Thief Simulator</a></td>
+    <td class="col-genre">模拟/潜行</td>
+    <td class="col-gameplay">第一人称小偷入室盗窃模拟</td>
+    <td class="col-rating rating-mid">84%</td>
+    <td class="col-fun">★★★</td>
+    <td class="col-size">5</td>
+    <td class="col-online"><span class="tag tag-offline">单人</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span></td>
+    <td class="col-art">写实3D</td>
+    <td class="col-diff diff-medium">中等</td>
+</tr>
+<tr data-online="0" data-mac="1" data-linux="1" data-r90="1" data-hard="0" data-easy="0">
+    <td style="text-align:center;color:#666;">165</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=This%20War%20of%20Mine" target="_blank" title="在 Steam 商店中打开" class="steam-link">This War of Mine</a></td>
+    <td class="col-genre">生存/策略</td>
+    <td class="col-gameplay">战争平民视角的沉重生存游戏</td>
+    <td class="col-rating rating-high">93%</td>
+    <td class="col-fun">★★★★★</td>
+    <td class="col-size">3</td>
+    <td class="col-online"><span class="tag tag-offline">单人</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span> <span class="tag tag-mac">Mac</span> <span class="tag tag-linux">Linux</span></td>
+    <td class="col-art">暗黑手绘</td>
+    <td class="col-diff diff-hard">困难</td>
+</tr>
+<tr data-online="0" data-mac="1" data-linux="1" data-r90="1" data-hard="0" data-easy="1">
+    <td style="text-align:center;color:#666;">166</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=To%20the%20Moon" target="_blank" title="在 Steam 商店中打开" class="steam-link">To the Moon</a></td>
+    <td class="col-genre">RPG/情感</td>
+    <td class="col-gameplay">穿越记忆实现临终遗愿的感人故事</td>
+    <td class="col-rating rating-high">96%</td>
+    <td class="col-fun">★★★★★</td>
+    <td class="col-size">0.2</td>
+    <td class="col-online"><span class="tag tag-offline">单人</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span> <span class="tag tag-mac">Mac</span> <span class="tag tag-linux">Linux</span></td>
+    <td class="col-art">像素复古</td>
+    <td class="col-diff diff-easy">简单</td>
+</tr>
+<tr data-online="1" data-mac="1" data-linux="0" data-r90="1" data-hard="0" data-easy="0">
+    <td style="text-align:center;color:#666;">167</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=Tomb%20Raider" target="_blank" title="在 Steam 商店中打开" class="steam-link">Tomb Raider</a></td>
+    <td class="col-genre">动作冒险</td>
+    <td class="col-gameplay">劳拉克罗夫特起源古墓丽影重启</td>
+    <td class="col-rating rating-high">95%</td>
+    <td class="col-fun">★★★★</td>
+    <td class="col-size">20</td>
+    <td class="col-online"><span class="tag tag-online">在线</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span> <span class="tag tag-mac">Mac</span></td>
+    <td class="col-art">写实3D</td>
+    <td class="col-diff diff-medium">中等</td>
+</tr>
+<tr data-online="0" data-mac="0" data-linux="0" data-r90="0" data-hard="0" data-easy="1">
+    <td style="text-align:center;color:#666;">168</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=Travellin%20Cats%20in%20China" target="_blank" title="在 Steam 商店中打开" class="steam-link">Travellin Cats in China</a></td>
+    <td class="col-genre">休闲/收集</td>
+    <td class="col-gameplay">猫咪中国旅行主题隐藏物品收集</td>
+    <td class="col-rating rating-high">85%</td>
+    <td class="col-fun">★★★</td>
+    <td class="col-size">0.5</td>
+    <td class="col-online"><span class="tag tag-offline">单人</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span></td>
+    <td class="col-art">可爱手绘</td>
+    <td class="col-diff diff-easy">简单</td>
+</tr>
+<tr data-online="0" data-mac="1" data-linux="1" data-r90="1" data-hard="0" data-easy="0">
+    <td style="text-align:center;color:#666;">169</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=Turmoil" target="_blank" title="在 Steam 商店中打开" class="steam-link">Turmoil</a></td>
+    <td class="col-genre">模拟/策略</td>
+    <td class="col-gameplay">19世纪石油开采模拟经营</td>
+    <td class="col-rating rating-high">92%</td>
+    <td class="col-fun">★★★★</td>
+    <td class="col-size">0.2</td>
+    <td class="col-online"><span class="tag tag-offline">单人</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span> <span class="tag tag-mac">Mac</span> <span class="tag tag-linux">Linux</span></td>
+    <td class="col-art">像素复古</td>
+    <td class="col-diff diff-medium">中等</td>
+</tr>
+<tr data-online="0" data-mac="1" data-linux="0" data-r90="1" data-hard="0" data-easy="0">
+    <td style="text-align:center;color:#666;">170</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=Underground%20Blossom" target="_blank" title="在 Steam 商店中打开" class="steam-link">Underground Blossom</a></td>
+    <td class="col-genre">解谜/冒险</td>
+    <td class="col-gameplay">Rusty Lake系列地铁站点击冒险</td>
+    <td class="col-rating rating-high">95%</td>
+    <td class="col-fun">★★★★</td>
+    <td class="col-size">0.3</td>
+    <td class="col-online"><span class="tag tag-offline">单人</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span> <span class="tag tag-mac">Mac</span></td>
+    <td class="col-art">诡异手绘</td>
+    <td class="col-diff diff-medium">中等</td>
+</tr>
+<tr data-online="0" data-mac="1" data-linux="1" data-r90="1" data-hard="0" data-easy="0">
+    <td style="text-align:center;color:#666;">171</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=Undertale" target="_blank" title="在 Steam 商店中打开" class="steam-link">Undertale</a></td>
+    <td class="col-genre">RPG/独立</td>
+    <td class="col-gameplay">颠覆传统RPG的经典像素冒险</td>
+    <td class="col-rating rating-high">96%</td>
+    <td class="col-fun">★★★★★</td>
+    <td class="col-size">0.2</td>
+    <td class="col-online"><span class="tag tag-offline">单人</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span> <span class="tag tag-mac">Mac</span> <span class="tag tag-linux">Linux</span></td>
+    <td class="col-art">像素复古</td>
+    <td class="col-diff diff-medium">中等</td>
+</tr>
+<tr data-online="0" data-mac="0" data-linux="0" data-r90="0" data-hard="0" data-easy="1">
+    <td style="text-align:center;color:#666;">172</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=Unfair%20Flips" target="_blank" title="在 Steam 商店中打开" class="steam-link">Unfair Flips</a></td>
+    <td class="col-genre">休闲/收集</td>
+    <td class="col-gameplay">二次元卡片翻转收集游戏</td>
+    <td class="col-rating rating-mid">76%</td>
+    <td class="col-fun">★★★</td>
+    <td class="col-size">1</td>
+    <td class="col-online"><span class="tag tag-offline">单人</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span></td>
+    <td class="col-art">动漫风格</td>
+    <td class="col-diff diff-easy">简单</td>
+</tr>
+<tr data-online="0" data-mac="1" data-linux="0" data-r90="1" data-hard="0" data-easy="1">
+    <td style="text-align:center;color:#666;">173</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=Untitled%20Goose%20Game" target="_blank" title="在 Steam 商店中打开" class="steam-link">Untitled Goose Game</a></td>
+    <td class="col-genre">潜行/搞笑</td>
+    <td class="col-gameplay">扮演捣蛋大鹅的搞笑潜行游戏</td>
+    <td class="col-rating rating-high">94%</td>
+    <td class="col-fun">★★★★★</td>
+    <td class="col-size">1</td>
+    <td class="col-online"><span class="tag tag-offline">单人</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span> <span class="tag tag-mac">Mac</span></td>
+    <td class="col-art">简约3D</td>
+    <td class="col-diff diff-easy">简单</td>
+</tr>
+<tr data-online="1" data-mac="0" data-linux="1" data-r90="1" data-hard="0" data-easy="0">
+    <td style="text-align:center;color:#666;">174</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=Valheim" target="_blank" title="在 Steam 商店中打开" class="steam-link">Valheim</a></td>
+    <td class="col-genre">生存/沙盒</td>
+    <td class="col-gameplay">维京主题开放世界生存建造探索</td>
+    <td class="col-rating rating-high">95%</td>
+    <td class="col-fun">★★★★★</td>
+    <td class="col-size">1</td>
+    <td class="col-online"><span class="tag tag-online">在线</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span> <span class="tag tag-linux">Linux</span></td>
+    <td class="col-art">低多边形唯美</td>
+    <td class="col-diff diff-hard">中等偏难</td>
+</tr>
+<tr data-online="1" data-mac="1" data-linux="0" data-r90="1" data-hard="0" data-easy="1">
+    <td style="text-align:center;color:#666;">175</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=Vampire%20Survivors" target="_blank" title="在 Steam 商店中打开" class="steam-link">Vampire Survivors</a></td>
+    <td class="col-genre">动作/Roguelike</td>
+    <td class="col-gameplay">像素自动攻击弹幕生存Roguelike</td>
+    <td class="col-rating rating-high">98%</td>
+    <td class="col-fun">★★★★★</td>
+    <td class="col-size">0.3</td>
+    <td class="col-online"><span class="tag tag-online">本地</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span> <span class="tag tag-mac">Mac</span></td>
+    <td class="col-art">极简像素</td>
+    <td class="col-diff diff-easy">简单</td>
+</tr>
+<tr data-online="0" data-mac="0" data-linux="0" data-r90="1" data-hard="0" data-easy="0">
+    <td style="text-align:center;color:#666;">176</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=Viewfinder" target="_blank" title="在 Steam 商店中打开" class="steam-link">Viewfinder</a></td>
+    <td class="col-genre">解谜/视角</td>
+    <td class="col-gameplay">用拍立得照片改变世界的第一人称解谜</td>
+    <td class="col-rating rating-high">96%</td>
+    <td class="col-fun">★★★★★</td>
+    <td class="col-size">15</td>
+    <td class="col-online"><span class="tag tag-offline">单人</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span></td>
+    <td class="col-art">唯美风格</td>
+    <td class="col-diff diff-medium">中等</td>
+</tr>
+<tr data-online="1" data-mac="0" data-linux="0" data-r90="0" data-hard="0" data-easy="0">
+    <td style="text-align:center;color:#666;">177</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=Warhammer%2040k%3A%20Sanctus%20Reach" target="_blank" title="在 Steam 商店中打开" class="steam-link">Warhammer 40k: Sanctus Reach</a></td>
+    <td class="col-genre">策略/战棋</td>
+    <td class="col-gameplay">战锤40K回合制战术策略</td>
+    <td class="col-rating rating-mid">82%</td>
+    <td class="col-fun">★★★</td>
+    <td class="col-size">3</td>
+    <td class="col-online"><span class="tag tag-online">支持</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span></td>
+    <td class="col-art">写实3D</td>
+    <td class="col-diff diff-hard">中等偏难</td>
+</tr>
+<tr data-online="1" data-mac="0" data-linux="0" data-r90="0" data-hard="0" data-easy="0">
+    <td style="text-align:center;color:#666;">178</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=We%20Were%20Here%20Together" target="_blank" title="在 Steam 商店中打开" class="steam-link">We Were Here Together</a></td>
+    <td class="col-genre">合作/解谜</td>
+    <td class="col-gameplay">双人合作逃脱解谜第三部</td>
+    <td class="col-rating rating-high">88%</td>
+    <td class="col-fun">★★★★</td>
+    <td class="col-size">10</td>
+    <td class="col-online"><span class="tag tag-online">双人</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span></td>
+    <td class="col-art">写实3D</td>
+    <td class="col-diff diff-hard">中等偏难</td>
+</tr>
+<tr data-online="1" data-mac="0" data-linux="0" data-r90="0" data-hard="0" data-easy="0">
+    <td style="text-align:center;color:#666;">179</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=We%20Were%20Here%20Too" target="_blank" title="在 Steam 商店中打开" class="steam-link">We Were Here Too</a></td>
+    <td class="col-genre">合作/解谜</td>
+    <td class="col-gameplay">双人合作逃脱解谜第二部</td>
+    <td class="col-rating rating-high">87%</td>
+    <td class="col-fun">★★★★</td>
+    <td class="col-size">5</td>
+    <td class="col-online"><span class="tag tag-online">双人</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span></td>
+    <td class="col-art">写实3D</td>
+    <td class="col-diff diff-hard">中等偏难</td>
+</tr>
+<tr data-online="0" data-mac="0" data-linux="0" data-r90="1" data-hard="0" data-easy="1">
+    <td style="text-align:center;color:#666;">180</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=What%20Remains%20of%20Edith%20Finch" target="_blank" title="在 Steam 商店中打开" class="steam-link">What Remains of Edith Finch</a></td>
+    <td class="col-genre">冒险/叙事</td>
+    <td class="col-gameplay">步行模拟叙事游戏天花板</td>
+    <td class="col-rating rating-high">95%</td>
+    <td class="col-fun">★★★★★</td>
+    <td class="col-size">5</td>
+    <td class="col-online"><span class="tag tag-offline">单人</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span></td>
+    <td class="col-art">写实唯美</td>
+    <td class="col-diff diff-easy">简单</td>
+</tr>
+<tr data-online="0" data-mac="1" data-linux="0" data-r90="1" data-hard="0" data-easy="1">
+    <td style="text-align:center;color:#666;">181</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=What%20The%20Golf%3F" target="_blank" title="在 Steam 商店中打开" class="steam-link">What The Golf?</a></td>
+    <td class="col-genre">体育/搞笑</td>
+    <td class="col-gameplay">颠覆高尔夫一切的搞笑物理游戏</td>
+    <td class="col-rating rating-high">93%</td>
+    <td class="col-fun">★★★★</td>
+    <td class="col-size">0.5</td>
+    <td class="col-online"><span class="tag tag-offline">单人</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span> <span class="tag tag-mac">Mac</span></td>
+    <td class="col-art">可爱卡通</td>
+    <td class="col-diff diff-easy">简单</td>
+</tr>
+<tr data-online="0" data-mac="0" data-linux="0" data-r90="0" data-hard="0" data-easy="0">
+    <td style="text-align:center;color:#666;">182</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=Will%20Glow%20the%20Wisp" target="_blank" title="在 Steam 商店中打开" class="steam-link">Will Glow the Wisp</a></td>
+    <td class="col-genre">平台/动作</td>
+    <td class="col-gameplay">霓虹粒子特效的精准跳跃平台</td>
+    <td class="col-rating rating-mid">84%</td>
+    <td class="col-fun">★★★</td>
+    <td class="col-size">0.3</td>
+    <td class="col-online"><span class="tag tag-offline">单人</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span></td>
+    <td class="col-art">霓虹粒子</td>
+    <td class="col-diff diff-hard">困难</td>
+</tr>
+<tr data-online="1" data-mac="0" data-linux="0" data-r90="1" data-hard="0" data-easy="1">
+    <td style="text-align:center;color:#666;">183</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=Wobbly%20Life" target="_blank" title="在 Steam 商店中打开" class="steam-link">Wobbly Life</a></td>
+    <td class="col-genre">沙盒/搞笑</td>
+    <td class="col-gameplay">软体物理开放世界搞笑生活模拟</td>
+    <td class="col-rating rating-high">95%</td>
+    <td class="col-fun">★★★★</td>
+    <td class="col-size">2</td>
+    <td class="col-online"><span class="tag tag-online">在线</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span></td>
+    <td class="col-art">可爱3D</td>
+    <td class="col-diff diff-easy">简单</td>
+</tr>
+<tr data-online="0" data-mac="1" data-linux="1" data-r90="1" data-hard="0" data-easy="0">
+    <td style="text-align:center;color:#666;">184</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=World%20of%20Goo" target="_blank" title="在 Steam 商店中打开" class="steam-link">World of Goo</a></td>
+    <td class="col-genre">解谜/物理</td>
+    <td class="col-gameplay">黏黏球物理建造解谜独立经典</td>
+    <td class="col-rating rating-high">93%</td>
+    <td class="col-fun">★★★★★</td>
+    <td class="col-size">0.1</td>
+    <td class="col-online"><span class="tag tag-offline">单人</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span> <span class="tag tag-mac">Mac</span> <span class="tag tag-linux">Linux</span></td>
+    <td class="col-art">卡通物理</td>
+    <td class="col-diff diff-medium">中等</td>
+</tr>
+<tr data-online="0" data-mac="1" data-linux="0" data-r90="1" data-hard="0" data-easy="0">
+    <td style="text-align:center;color:#666;">185</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=%E5%B7%B4%E5%88%AB%E5%A1%94%E5%9C%A3%E6%AD%8C" target="_blank" title="在 Steam 商店中打开" class="steam-link">巴别塔圣歌 (Chants of Sennaar)</a></td>
+    <td class="col-genre">解谜/冒险</td>
+    <td class="col-gameplay">破译古代语言的冒险解谜</td>
+    <td class="col-rating rating-high">96%</td>
+    <td class="col-fun">★★★★★</td>
+    <td class="col-size">1.5</td>
+    <td class="col-online"><span class="tag tag-offline">单人</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span> <span class="tag tag-mac">Mac</span></td>
+    <td class="col-art">风格化手绘</td>
+    <td class="col-diff diff-medium">中等</td>
+</tr>
+<tr data-online="0" data-mac="0" data-linux="0" data-r90="0" data-hard="0" data-easy="0">
+    <td style="text-align:center;color:#666;">186</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=%E7%BC%96%E7%A8%8B%E7%9F%BF%E5%9C%BA" target="_blank" title="在 Steam 商店中打开" class="steam-link">编程矿场 (Code Miner)</a></td>
+    <td class="col-genre">模拟/编程</td>
+    <td class="col-gameplay">编程主题资源管理模拟</td>
+    <td class="col-rating rating-mid">80%</td>
+    <td class="col-fun">★★★</td>
+    <td class="col-size">0.5</td>
+    <td class="col-online"><span class="tag tag-offline">单人</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span></td>
+    <td class="col-art">极简</td>
+    <td class="col-diff diff-hard">困难</td>
+</tr>
+<tr data-online="0" data-mac="1" data-linux="0" data-r90="1" data-hard="1" data-easy="0">
+    <td style="text-align:center;color:#666;">187</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=%E5%86%B0%E6%B1%BD%E6%97%B6%E4%BB%A3" target="_blank" title="在 Steam 商店中打开" class="steam-link">冰汽时代 (Frostpunk)</a></td>
+    <td class="col-genre">策略/生存</td>
+    <td class="col-gameplay">末世冰霜城市生存策略</td>
+    <td class="col-rating rating-high">91%</td>
+    <td class="col-fun">★★★★★</td>
+    <td class="col-size">8</td>
+    <td class="col-online"><span class="tag tag-offline">单人</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span> <span class="tag tag-mac">Mac</span></td>
+    <td class="col-art">暗黑写实</td>
+    <td class="col-diff diff-extreme">极难</td>
+</tr>
+<tr data-online="1" data-mac="1" data-linux="0" data-r90="0" data-hard="0" data-easy="0">
+    <td style="text-align:center;color:#666;">188</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=%E4%B8%8D%E5%90%8C%E7%9A%84%E5%86%AC%E5%A4%A9" target="_blank" title="在 Steam 商店中打开" class="steam-link">不同的冬天 (BOKURA)</a></td>
+    <td class="col-genre">解谜/合作</td>
+    <td class="col-gameplay">双人视角不同的合作解谜</td>
+    <td class="col-rating rating-high">88%</td>
+    <td class="col-fun">★★★★</td>
+    <td class="col-size">1</td>
+    <td class="col-online"><span class="tag tag-online">双人</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span> <span class="tag tag-mac">Mac</span></td>
+    <td class="col-art">像素</td>
+    <td class="col-diff diff-medium">中等</td>
+</tr>
+<tr data-online="0" data-mac="0" data-linux="0" data-r90="1" data-hard="0" data-easy="0">
+    <td style="text-align:center;color:#666;">189</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=%E6%88%B4%E6%A3%AE%E7%90%83%E8%AE%A1%E5%88%92" target="_blank" title="在 Steam 商店中打开" class="steam-link">戴森球计划 (Dyson Sphere Program)</a></td>
+    <td class="col-genre">模拟/自动化</td>
+    <td class="col-gameplay">星际自动化工厂建造</td>
+    <td class="col-rating rating-high">97%</td>
+    <td class="col-fun">★★★★★</td>
+    <td class="col-size">3</td>
+    <td class="col-online"><span class="tag tag-offline">单人</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span></td>
+    <td class="col-art">科幻写实</td>
+    <td class="col-diff diff-hard">困难</td>
+</tr>
+<tr data-online="1" data-mac="1" data-linux="0" data-r90="1" data-hard="0" data-easy="0">
+    <td style="text-align:center;color:#666;">190</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=%E6%BB%B4%E7%AD%94%3A%20%E5%8F%8C%E4%BA%BA%E5%86%92%E9%99%A9" target="_blank" title="在 Steam 商店中打开" class="steam-link">滴答: 双人冒险 (Tick Tock)</a></td>
+    <td class="col-genre">解谜/合作</td>
+    <td class="col-gameplay">双人不同设备合作解谜</td>
+    <td class="col-rating rating-high">90%</td>
+    <td class="col-fun">★★★★</td>
+    <td class="col-size">0.3</td>
+    <td class="col-online"><span class="tag tag-online">双人</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span> <span class="tag tag-mac">Mac</span></td>
+    <td class="col-art">手绘</td>
+    <td class="col-diff diff-medium">中等</td>
+</tr>
+<tr data-online="0" data-mac="0" data-linux="0" data-r90="1" data-hard="0" data-easy="1">
+    <td style="text-align:center;color:#666;">191</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=%E5%BA%95%E7%89%B9%E5%BE%8B%3A%20%E5%8C%96%E8%BA%AB%E4%B8%BA%E4%BA%BA" target="_blank" title="在 Steam 商店中打开" class="steam-link">底特律: 化身为人 (Detroit: Become Human)</a></td>
+    <td class="col-genre">冒险/互动</td>
+    <td class="col-gameplay">仿生人觉醒科幻互动叙事</td>
+    <td class="col-rating rating-high">93%</td>
+    <td class="col-fun">★★★★★</td>
+    <td class="col-size">55</td>
+    <td class="col-online"><span class="tag tag-offline">单人</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span></td>
+    <td class="col-art">写实</td>
+    <td class="col-diff diff-easy">简单</td>
+</tr>
+<tr data-online="0" data-mac="1" data-linux="0" data-r90="1" data-hard="0" data-easy="0">
+    <td style="text-align:center;color:#666;">192</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=%E6%A0%B9%E6%9C%AC%E6%B2%A1%E6%9C%89%E6%B8%B8%E6%88%8F" target="_blank" title="在 Steam 商店中打开" class="steam-link">根本没有游戏 (There Is No Game)</a></td>
+    <td class="col-genre">解谜/元游戏</td>
+    <td class="col-gameplay">打破常规的meta解谜喜剧</td>
+    <td class="col-rating rating-high">96%</td>
+    <td class="col-fun">★★★★★</td>
+    <td class="col-size">1</td>
+    <td class="col-online"><span class="tag tag-offline">单人</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span> <span class="tag tag-mac">Mac</span></td>
+    <td class="col-art">像素混合</td>
+    <td class="col-diff diff-medium">中等</td>
+</tr>
+<tr data-online="0" data-mac="0" data-linux="0" data-r90="0" data-hard="0" data-easy="0">
+    <td style="text-align:center;color:#666;">193</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=%E5%88%AE%E4%B8%AA%E7%88%BD" target="_blank" title="在 Steam 商店中打开" class="steam-link">刮个爽 (Scratchy)</a></td>
+    <td class="col-genre">休闲/解压</td>
+    <td class="col-gameplay">刮奖解压休闲小游戏</td>
+    <td class="col-rating rating-mid">75%</td>
+    <td class="col-fun">★★★</td>
+    <td class="col-size">0.1</td>
+    <td class="col-online"><span class="tag tag-offline">单人</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span></td>
+    <td class="col-art">极简</td>
+    <td class="col-diff diff-easy">极简单</td>
+</tr>
+<tr data-online="0" data-mac="0" data-linux="0" data-r90="1" data-hard="0" data-easy="0">
+    <td style="text-align:center;color:#666;">194</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=%E8%BF%87%E5%B1%B1%E8%BD%A6%E4%B9%8B%E6%98%9F" target="_blank" title="在 Steam 商店中打开" class="steam-link">过山车之星 (Planet Coaster)</a></td>
+    <td class="col-genre">模拟/经营</td>
+    <td class="col-gameplay">现代主题公园建造经营模拟</td>
+    <td class="col-rating rating-high">91%</td>
+    <td class="col-fun">★★★★</td>
+    <td class="col-size">10</td>
+    <td class="col-online"><span class="tag tag-offline">单人</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span></td>
+    <td class="col-art">写实3D</td>
+    <td class="col-diff diff-medium">中等</td>
+</tr>
+<tr data-online="0" data-mac="1" data-linux="0" data-r90="0" data-hard="0" data-easy="0">
+    <td style="text-align:center;color:#666;">195</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=%E6%B5%B7%E9%BE%9F%E8%98%91%E8%8F%87%E6%B1%A4" target="_blank" title="在 Steam 商店中打开" class="steam-link">海龟蘑菇汤 (Turtle Soup)</a></td>
+    <td class="col-genre">解谜/推理</td>
+    <td class="col-gameplay">海龟汤式情景推理游戏</td>
+    <td class="col-rating rating-high">85%</td>
+    <td class="col-fun">★★★</td>
+    <td class="col-size">0.3</td>
+    <td class="col-online"><span class="tag tag-offline">单人</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span> <span class="tag tag-mac">Mac</span></td>
+    <td class="col-art">简约手绘</td>
+    <td class="col-diff diff-medium">中等</td>
+</tr>
+<tr data-online="0" data-mac="0" data-linux="0" data-r90="1" data-hard="0" data-easy="1">
+    <td style="text-align:center;color:#666;">196</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=%E7%81%AB%E5%B1%B1%E7%9A%84%E5%A5%B3%E5%84%BF" target="_blank" title="在 Steam 商店中打开" class="steam-link">火山的女儿 (Volcano Princess)</a></td>
+    <td class="col-genre">模拟/养成</td>
+    <td class="col-gameplay">培养女儿成长的温馨养成</td>
+    <td class="col-rating rating-high">97%</td>
+    <td class="col-fun">★★★★★</td>
+    <td class="col-size">2</td>
+    <td class="col-online"><span class="tag tag-offline">单人</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span></td>
+    <td class="col-art">日系手绘</td>
+    <td class="col-diff diff-easy">简单</td>
+</tr>
+<tr data-online="0" data-mac="0" data-linux="0" data-r90="0" data-hard="0" data-easy="0">
+    <td style="text-align:center;color:#666;">197</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=%E5%8D%A1%E7%89%87%E9%AD%94%E7%8E%8B%3A%20%E5%8F%AA%E5%89%A9%E4%B8%AA%E5%A4%B4%21" target="_blank" title="在 Steam 商店中打开" class="steam-link">卡片魔王: 只剩个头!</a></td>
+    <td class="col-genre">卡牌/策略</td>
+    <td class="col-gameplay">卡牌对战独立游戏</td>
+    <td class="col-rating rating-mid">78%</td>
+    <td class="col-fun">★★★</td>
+    <td class="col-size">0.2</td>
+    <td class="col-online"><span class="tag tag-offline">单人</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span></td>
+    <td class="col-art">简约</td>
+    <td class="col-diff diff-medium">中等</td>
+</tr>
+<tr data-online="1" data-mac="0" data-linux="0" data-r90="0" data-hard="0" data-easy="0">
+    <td style="text-align:center;color:#666;">198</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=%E7%8C%8E%E4%BA%BA%3A%20%E8%8D%92%E9%87%8E%E7%9A%84%E5%8F%AC%E5%94%A4" target="_blank" title="在 Steam 商店中打开" class="steam-link">猎人: 荒野的召唤 (theHunter: COTW)</a></td>
+    <td class="col-genre">模拟/狩猎</td>
+    <td class="col-gameplay">真实狩猎模拟开放世界</td>
+    <td class="col-rating rating-high">88%</td>
+    <td class="col-fun">★★★★</td>
+    <td class="col-size">60</td>
+    <td class="col-online"><span class="tag tag-online">合作</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span></td>
+    <td class="col-art">写实唯美</td>
+    <td class="col-diff diff-hard">中等偏难</td>
+</tr>
+<tr data-online="1" data-mac="1" data-linux="0" data-r90="1" data-hard="0" data-easy="0">
+    <td style="text-align:center;color:#666;">199</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=%E5%AF%86%E5%AE%A4%E9%80%83%E8%84%B1%E6%A8%A1%E6%8B%9F%E5%99%A8" target="_blank" title="在 Steam 商店中打开" class="steam-link">密室逃脱模拟器 (Escape Simulator)</a></td>
+    <td class="col-genre">解谜/密室</td>
+    <td class="col-gameplay">第一人称密室逃脱可自定义</td>
+    <td class="col-rating rating-high">93%</td>
+    <td class="col-fun">★★★★</td>
+    <td class="col-size">3</td>
+    <td class="col-online"><span class="tag tag-online">合作</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span> <span class="tag tag-mac">Mac</span></td>
+    <td class="col-art">低多边形</td>
+    <td class="col-diff diff-medium">中等</td>
+</tr>
+<tr data-online="0" data-mac="1" data-linux="0" data-r90="1" data-hard="0" data-easy="0">
+    <td style="text-align:center;color:#666;">200</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=%E5%92%A9%E5%92%A9%E5%90%AF%E7%A4%BA%E5%BD%95" target="_blank" title="在 Steam 商店中打开" class="steam-link">咩咩启示录 (Cult of the Lamb)</a></td>
+    <td class="col-genre">动作/Roguelike</td>
+    <td class="col-gameplay">经营邪教+地下城探险</td>
+    <td class="col-rating rating-high">94%</td>
+    <td class="col-fun">★★★★★</td>
+    <td class="col-size">4</td>
+    <td class="col-online"><span class="tag tag-offline">单人</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span> <span class="tag tag-mac">Mac</span></td>
+    <td class="col-art">可爱暗黑</td>
+    <td class="col-diff diff-medium">中等</td>
+</tr>
+<tr data-online="1" data-mac="0" data-linux="0" data-r90="1" data-hard="0" data-easy="0">
+    <td style="text-align:center;color:#666;">201</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=%E6%9E%AA%E7%81%AB%E9%87%8D%E7%94%9F" target="_blank" title="在 Steam 商店中打开" class="steam-link">枪火重生 (Gunfire Reborn)</a></td>
+    <td class="col-genre">FPS/Roguelike</td>
+    <td class="col-gameplay">国风卡通FPS Roguelike</td>
+    <td class="col-rating rating-high">93%</td>
+    <td class="col-fun">★★★★</td>
+    <td class="col-size">3</td>
+    <td class="col-online"><span class="tag tag-online">在线</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span></td>
+    <td class="col-art">国风卡通</td>
+    <td class="col-diff diff-hard">中等偏难</td>
+</tr>
+<tr data-online="0" data-mac="0" data-linux="0" data-r90="0" data-hard="0" data-easy="1">
+    <td style="text-align:center;color:#666;">202</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=%E6%83%85%E6%84%9F%E5%8F%8D%E8%AF%88%E6%A8%A1%E6%8B%9F%E5%99%A8" target="_blank" title="在 Steam 商店中打开" class="steam-link">情感反诈模拟器</a></td>
+    <td class="col-genre">模拟/搞笑</td>
+    <td class="col-gameplay">模拟情感诈骗反套路</td>
+    <td class="col-rating rating-mid">70%</td>
+    <td class="col-fun">★★★</td>
+    <td class="col-size">0.5</td>
+    <td class="col-online"><span class="tag tag-offline">单人</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span></td>
+    <td class="col-art">简约UI</td>
+    <td class="col-diff diff-easy">简单</td>
+</tr>
+<tr data-online="0" data-mac="1" data-linux="0" data-r90="1" data-hard="0" data-easy="0">
+    <td style="text-align:center;color:#666;">203</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=%E5%85%A8%E7%BD%91%E5%85%AC%E6%95%8C" target="_blank" title="在 Steam 商店中打开" class="steam-link">全网公敌 (Cyber Manhunt)</a></td>
+    <td class="col-genre">模拟/黑客</td>
+    <td class="col-gameplay">扮演黑客调查揭露真相</td>
+    <td class="col-rating rating-high">90%</td>
+    <td class="col-fun">★★★★</td>
+    <td class="col-size">2</td>
+    <td class="col-online"><span class="tag tag-offline">单人</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span> <span class="tag tag-mac">Mac</span></td>
+    <td class="col-art">极简UI</td>
+    <td class="col-diff diff-medium">中等</td>
+</tr>
+<tr data-online="1" data-mac="1" data-linux="0" data-r90="0" data-hard="0" data-easy="0">
+    <td style="text-align:center;color:#666;">204</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=%E9%9B%80%E9%AD%82%E9%BA%BB%E5%B0%86" target="_blank" title="在 Steam 商店中打开" class="steam-link">雀魂麻将 (Mahjong Soul)</a></td>
+    <td class="col-genre">休闲/麻将</td>
+    <td class="col-gameplay">日麻在线对战</td>
+    <td class="col-rating rating-mid">80%</td>
+    <td class="col-fun">★★★★</td>
+    <td class="col-size">2</td>
+    <td class="col-online"><span class="tag tag-online">在线</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span> <span class="tag tag-mac">Mac</span></td>
+    <td class="col-art">日系动漫</td>
+    <td class="col-diff diff-medium">中等</td>
+</tr>
+<tr data-online="1" data-mac="0" data-linux="0" data-r90="1" data-hard="0" data-easy="0">
+    <td style="text-align:center;color:#666;">205</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=%E6%B7%B1%E5%B2%A9%E9%93%B6%E6%B2%B3" target="_blank" title="在 Steam 商店中打开" class="steam-link">深岩银河 (Deep Rock Galactic)</a></td>
+    <td class="col-genre">FPS/合作</td>
+    <td class="col-gameplay">矮人矿工合作射击打虫</td>
+    <td class="col-rating rating-high">97%</td>
+    <td class="col-fun">★★★★★</td>
+    <td class="col-size">4</td>
+    <td class="col-online"><span class="tag tag-online">在线</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span></td>
+    <td class="col-art">低多边形</td>
+    <td class="col-diff diff-medium">中等</td>
+</tr>
+<tr data-online="0" data-mac="0" data-linux="0" data-r90="0" data-hard="0" data-easy="1">
+    <td style="text-align:center;color:#666;">206</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=%E7%A5%9E%E7%BB%8F%E9%B9%85" target="_blank" title="在 Steam 商店中打开" class="steam-link">神经鹅 (Neurogoose)</a></td>
+    <td class="col-genre">休闲/搞笑</td>
+    <td class="col-gameplay">神经质大鹅捣乱</td>
+    <td class="col-rating rating-mid">75%</td>
+    <td class="col-fun">★★★</td>
+    <td class="col-size">0.5</td>
+    <td class="col-online"><span class="tag tag-offline">单人</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span></td>
+    <td class="col-art">可爱</td>
+    <td class="col-diff diff-easy">简单</td>
+</tr>
+<tr data-online="1" data-mac="0" data-linux="0" data-r90="1" data-hard="0" data-easy="0">
+    <td style="text-align:center;color:#666;">207</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=%E5%8F%8C%E5%BD%B1%E5%A5%87%E5%A2%83" target="_blank" title="在 Steam 商店中打开" class="steam-link">双影奇境 (Split Fiction)</a></td>
+    <td class="col-genre">合作/动作</td>
+    <td class="col-gameplay">双人分屏合作奇幻冒险</td>
+    <td class="col-rating rating-high">94%</td>
+    <td class="col-fun">★★★★★</td>
+    <td class="col-size">80</td>
+    <td class="col-online"><span class="tag tag-online">双人</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span></td>
+    <td class="col-art">写实</td>
+    <td class="col-diff diff-medium">中等</td>
+</tr>
+<tr data-online="1" data-mac="0" data-linux="0" data-r90="0" data-hard="0" data-easy="1">
+    <td style="text-align:center;color:#666;">208</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=%E7%B3%96%E8%B1%86%E4%BA%BA" target="_blank" title="在 Steam 商店中打开" class="steam-link">糖豆人 (Fall Guys)</a></td>
+    <td class="col-genre">派对/多人</td>
+    <td class="col-gameplay">综艺闯关大乱斗淘汰赛</td>
+    <td class="col-rating rating-mid">80%</td>
+    <td class="col-fun">★★★★</td>
+    <td class="col-size">2</td>
+    <td class="col-online"><span class="tag tag-online">在线</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span></td>
+    <td class="col-art">可爱卡通</td>
+    <td class="col-diff diff-easy">简单</td>
+</tr>
+<tr data-online="0" data-mac="0" data-linux="0" data-r90="0" data-hard="0" data-easy="1">
+    <td style="text-align:center;color:#666;">209</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=%E9%99%B6%E8%89%BA%E5%A4%A7%E5%B8%88" target="_blank" title="在 Steam 商店中打开" class="steam-link">陶艺大师 (Master of Pottery)</a></td>
+    <td class="col-genre">模拟/创作</td>
+    <td class="col-gameplay">制作陶瓷艺术品模拟</td>
+    <td class="col-rating rating-high">85%</td>
+    <td class="col-fun">★★★</td>
+    <td class="col-size">2</td>
+    <td class="col-online"><span class="tag tag-offline">单人</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span></td>
+    <td class="col-art">写实3D</td>
+    <td class="col-diff diff-easy">简单</td>
+</tr>
+<tr data-online="0" data-mac="1" data-linux="0" data-r90="1" data-hard="0" data-easy="0">
+    <td style="text-align:center;color:#666;">210</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=%E6%96%87%E5%AD%97%E6%B8%B8%E6%88%8F" target="_blank" title="在 Steam 商店中打开" class="steam-link">文字游戏 (Word Game)</a></td>
+    <td class="col-genre">解谜/创意</td>
+    <td class="col-gameplay">用文字本身解谜的独特游戏</td>
+    <td class="col-rating rating-high">95%</td>
+    <td class="col-fun">★★★★★</td>
+    <td class="col-size">0.5</td>
+    <td class="col-online"><span class="tag tag-offline">单人</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span> <span class="tag tag-mac">Mac</span></td>
+    <td class="col-art">极简</td>
+    <td class="col-diff diff-hard">中等偏难</td>
+</tr>
+<tr data-online="1" data-mac="0" data-linux="0" data-r90="0" data-hard="0" data-easy="0">
+    <td style="text-align:center;color:#666;">211</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=%E6%88%91%E4%BB%AC%E6%9B%BE%E5%88%B0%E6%AD%A4%E6%8E%A2%E9%99%A9%3A%20%E5%8F%8B%E8%B0%8A%E8%80%83%E9%AA%8C" target="_blank" title="在 Steam 商店中打开" class="steam-link">我们曾到此探险: 友谊考验</a></td>
+    <td class="col-genre">合作/解谜</td>
+    <td class="col-gameplay">We Were Here系列双人解谜</td>
+    <td class="col-rating rating-high">88%</td>
+    <td class="col-fun">★★★★</td>
+    <td class="col-size">10</td>
+    <td class="col-online"><span class="tag tag-online">双人</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span></td>
+    <td class="col-art">写实3D</td>
+    <td class="col-diff diff-hard">中等偏难</td>
+</tr>
+<tr data-online="0" data-mac="0" data-linux="0" data-r90="1" data-hard="0" data-easy="0">
+    <td style="text-align:center;color:#666;">212</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=%E5%B7%AB%E5%B8%883%3A%20%E7%8B%82%E7%8C%8E" target="_blank" title="在 Steam 商店中打开" class="steam-link">巫师3: 狂猎 (The Witcher 3)</a></td>
+    <td class="col-genre">RPG/开放世界</td>
+    <td class="col-gameplay">猎魔人史诗奇幻开放世界</td>
+    <td class="col-rating rating-high">97%</td>
+    <td class="col-fun">★★★★★</td>
+    <td class="col-size">50</td>
+    <td class="col-online"><span class="tag tag-offline">单人</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span></td>
+    <td class="col-art">写实奇幻</td>
+    <td class="col-diff diff-medium">中等</td>
+</tr>
+<tr data-online="1" data-mac="0" data-linux="0" data-r90="0" data-hard="0" data-easy="0">
+    <td style="text-align:center;color:#666;">213</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=%E6%97%A0%E4%B8%BB%E4%B9%8B%E5%9C%B03" target="_blank" title="在 Steam 商店中打开" class="steam-link">无主之地3 (Borderlands 3)</a></td>
+    <td class="col-genre">FPS/RPG</td>
+    <td class="col-gameplay">刷宝射击+黑色幽默科幻</td>
+    <td class="col-rating rating-mid">84%</td>
+    <td class="col-fun">★★★★</td>
+    <td class="col-size">75</td>
+    <td class="col-online"><span class="tag tag-online">在线</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span></td>
+    <td class="col-art">卡通渲染</td>
+    <td class="col-diff diff-medium">中等</td>
+</tr>
+<tr data-online="0" data-mac="0" data-linux="0" data-r90="1" data-hard="0" data-easy="0">
+    <td style="text-align:center;color:#666;">214</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=%E5%B0%8F%E5%B0%8F%E6%A2%A6%E9%AD%87%E5%BC%BA%E5%8C%96%E7%89%88" target="_blank" title="在 Steam 商店中打开" class="steam-link">小小梦魇强化版 (Little Nightmares EE)</a></td>
+    <td class="col-genre">冒险/恐怖</td>
+    <td class="col-gameplay">暗黑童话横版恐怖冒险强化版</td>
+    <td class="col-rating rating-high">94%</td>
+    <td class="col-fun">★★★★</td>
+    <td class="col-size">3</td>
+    <td class="col-online"><span class="tag tag-offline">单人</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span></td>
+    <td class="col-art">暗黑童话</td>
+    <td class="col-diff diff-medium">中等</td>
+</tr>
+<tr data-online="0" data-mac="1" data-linux="0" data-r90="1" data-hard="0" data-easy="0">
+    <td style="text-align:center;color:#666;">215</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=%E9%82%AA%E6%81%B6%E5%86%A5%E5%88%BB" target="_blank" title="在 Steam 商店中打开" class="steam-link">邪恶冥刻 (Inscryption)</a></td>
+    <td class="col-genre">卡牌/恐怖</td>
+    <td class="col-gameplay">卡牌+密室逃脱+meta元素</td>
+    <td class="col-rating rating-high">97%</td>
+    <td class="col-fun">★★★★★</td>
+    <td class="col-size">3</td>
+    <td class="col-online"><span class="tag tag-offline">单人</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span> <span class="tag tag-mac">Mac</span></td>
+    <td class="col-art">暗黑像素</td>
+    <td class="col-diff diff-hard">中等偏难</td>
+</tr>
+<tr data-online="0" data-mac="0" data-linux="0" data-r90="1" data-hard="0" data-easy="0">
+    <td style="text-align:center;color:#666;">216</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=%E8%8D%AF%E5%89%82%E5%B7%A5%E8%89%BA%3A%20%E7%82%BC%E9%87%91%E6%A8%A1%E6%8B%9F%E5%99%A8" target="_blank" title="在 Steam 商店中打开" class="steam-link">药剂工艺: 炼金模拟器 (Potion Craft)</a></td>
+    <td class="col-genre">模拟/经营</td>
+    <td class="col-gameplay">中世纪炼金药房经营模拟</td>
+    <td class="col-rating rating-high">91%</td>
+    <td class="col-fun">★★★★</td>
+    <td class="col-size">2</td>
+    <td class="col-online"><span class="tag tag-offline">单人</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span></td>
+    <td class="col-art">中世纪手绘</td>
+    <td class="col-diff diff-medium">中等</td>
+</tr>
+<tr data-online="0" data-mac="1" data-linux="0" data-r90="1" data-hard="0" data-easy="0">
+    <td style="text-align:center;color:#666;">217</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=%E7%96%91%E6%A1%88%E8%BF%BD%E5%A3%B0" target="_blank" title="在 Steam 商店中打开" class="steam-link">疑案追声 (Unheard)</a></td>
+    <td class="col-genre">解谜/推理</td>
+    <td class="col-gameplay">用声音破案的独特推理游戏</td>
+    <td class="col-rating rating-high">95%</td>
+    <td class="col-fun">★★★★★</td>
+    <td class="col-size">2</td>
+    <td class="col-online"><span class="tag tag-offline">单人</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span> <span class="tag tag-mac">Mac</span></td>
+    <td class="col-art">极简</td>
+    <td class="col-diff diff-medium">中等</td>
+</tr>
+<tr data-online="0" data-mac="0" data-linux="0" data-r90="0" data-hard="0" data-easy="0">
+    <td style="text-align:center;color:#666;">218</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=%E8%8B%B1%E9%9B%84%E4%B9%8B%E6%97%B6" target="_blank" title="在 Steam 商店中打开" class="steam-link">英雄之时 (Hero's Hour)</a></td>
+    <td class="col-genre">策略/回合</td>
+    <td class="col-gameplay">像素回合制策略探索</td>
+    <td class="col-rating rating-high">88%</td>
+    <td class="col-fun">★★★★</td>
+    <td class="col-size">0.5</td>
+    <td class="col-online"><span class="tag tag-offline">单人</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span></td>
+    <td class="col-art">像素</td>
+    <td class="col-diff diff-medium">中等</td>
+</tr>
+<tr data-online="1" data-mac="0" data-linux="0" data-r90="1" data-hard="0" data-easy="0">
+    <td style="text-align:center;color:#666;">219</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=%E9%9B%A8%E4%B8%AD%E5%86%92%E9%99%A92" target="_blank" title="在 Steam 商店中打开" class="steam-link">雨中冒险2 (Risk of Rain 2)</a></td>
+    <td class="col-genre">动作/Roguelike</td>
+    <td class="col-gameplay">3D多人合作射击Roguelike</td>
+    <td class="col-rating rating-high">94%</td>
+    <td class="col-fun">★★★★★</td>
+    <td class="col-size">3</td>
+    <td class="col-online"><span class="tag tag-online">在线</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span></td>
+    <td class="col-art">科幻写实</td>
+    <td class="col-diff diff-hard">困难</td>
+</tr>
+<tr data-online="0" data-mac="0" data-linux="0" data-r90="1" data-hard="0" data-easy="0">
+    <td style="text-align:center;color:#666;">220</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=%E7%9C%9F%E6%8E%A2" target="_blank" title="在 Steam 商店中打开" class="steam-link">真探</a></td>
+    <td class="col-genre">解谜/推理</td>
+    <td class="col-gameplay">硬核文本推理侦探游戏</td>
+    <td class="col-rating rating-high">92%</td>
+    <td class="col-fun">★★★★</td>
+    <td class="col-size">0.3</td>
+    <td class="col-online"><span class="tag tag-offline">单人</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span></td>
+    <td class="col-art">极简文本</td>
+    <td class="col-diff diff-hard">困难</td>
+</tr>
+<tr data-online="0" data-mac="0" data-linux="0" data-r90="1" data-hard="0" data-easy="0">
+    <td style="text-align:center;color:#666;">221</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=%E7%9C%9F%E6%8E%A22" target="_blank" title="在 Steam 商店中打开" class="steam-link">真探2</a></td>
+    <td class="col-genre">解谜/推理</td>
+    <td class="col-gameplay">续作更多案件推理</td>
+    <td class="col-rating rating-high">90%</td>
+    <td class="col-fun">★★★★</td>
+    <td class="col-size">0.3</td>
+    <td class="col-online"><span class="tag tag-offline">单人</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span></td>
+    <td class="col-art">极简文本</td>
+    <td class="col-diff diff-hard">困难</td>
+</tr>
+<tr data-online="0" data-mac="0" data-linux="0" data-r90="0" data-hard="0" data-easy="0">
+    <td style="text-align:center;color:#666;">222</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=%E7%9C%9F%E6%8E%A23" target="_blank" title="在 Steam 商店中打开" class="steam-link">真探3</a></td>
+    <td class="col-genre">解谜/推理</td>
+    <td class="col-gameplay">第三部终极推理挑战</td>
+    <td class="col-rating rating-high">88%</td>
+    <td class="col-fun">★★★★</td>
+    <td class="col-size">0.3</td>
+    <td class="col-online"><span class="tag tag-offline">单人</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span></td>
+    <td class="col-art">极简文本</td>
+    <td class="col-diff diff-hard">困难</td>
+</tr>
+<tr data-online="0" data-mac="0" data-linux="0" data-r90="0" data-hard="0" data-easy="1">
+    <td style="text-align:center;color:#666;">223</td>
+    <td class="col-name"><a href="https://store.steampowered.com/search/?term=%E4%B8%AD%E5%9B%BD%E5%BC%8F%E5%AE%B6%E9%95%BF" target="_blank" title="在 Steam 商店中打开" class="steam-link">中国式家长 (Chinese Parents)</a></td>
+    <td class="col-genre">模拟/养成</td>
+    <td class="col-gameplay">模拟中国式育儿成长</td>
+    <td class="col-rating rating-high">88%</td>
+    <td class="col-fun">★★★★</td>
+    <td class="col-size">1</td>
+    <td class="col-online"><span class="tag tag-offline">单人</span></td>
+    <td class="col-platform"><span class="tag tag-win">Win</span></td>
+    <td class="col-art">像素</td>
+    <td class="col-diff diff-easy">简单</td>
+</tr>
+
+</tbody>
+</table>
+</div>
+
+<div class="footer"><p>Made with Claude Code | 点击游戏名 → 跳转 Steam 商店 | 点击数据卡片 → 筛选游戏</p></div>
+
+<script>
+let activeFilter = 'all';
+
+function filterBy(filter, cardEl) {
+    if (activeFilter === filter && filter !== 'all') {
+        filter = 'all';
+        cardEl = document.querySelector('[data-filter="all"]');
+    }
+    activeFilter = filter;
+
+    // Update active card
+    document.querySelectorAll('.stat-card').forEach(c => c.classList.remove('active'));
+    const targetCard = document.querySelector('[data-filter="' + filter + '"]');
+    if (targetCard) targetCard.classList.add('active');
+
+    // Update filter bar
+    const bar = document.getElementById('filterBar');
+    const labels = {'all':'全部游戏','online':'支持联机','mac':'支持 Mac','linux':'支持 Linux','r90':'评分 90%+','hard':'极难游戏','easy':'休闲简单'};
+    document.getElementById('filterLabel').textContent = labels[filter] || filter;
+    if (filter === 'all') bar.classList.remove('show');
+    else bar.classList.add('show');
+
+    applyAllFilters();
+}
+
+function applyAllFilters() {
+    const query = document.getElementById('search').value.toLowerCase();
+    const rows = document.querySelectorAll('#gameTable tbody tr');
+    let count = 0;
+
+    rows.forEach(row => {
+        let show = true;
+
+        // Stat filter
+        if (activeFilter !== 'all') {
+            const attr = 'data-' + activeFilter;
+            show = row.getAttribute(attr) === '1';
+        }
+
+        // Search filter
+        if (show && query) {
+            show = row.textContent.toLowerCase().includes(query);
+        }
+
+        row.style.display = show ? '' : 'none';
+        if (show) count++;
+    });
+
+    document.getElementById('resultCount').innerHTML = '共显示 <strong>' + count + '</strong> 个游戏' + (count < 223 ? '（已筛选）' : '');
+}
+
+// Init: mark "all" as active
+document.querySelector('[data-filter="all"]').classList.add('active');
+</script>
+</body>
+</html>
