@@ -83,6 +83,31 @@ tbody tr:nth-child(even):hover{background:rgba(0,210,255,0.06)}
 ::-webkit-scrollbar{width:6px;height:6px}
 ::-webkit-scrollbar-track{background:rgba(0,0,0,0.2)}
 ::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.12);border-radius:3px}
+
+/* === Sort & Filter on Headers === */
+th.sortable{cursor:pointer;user-select:none;transition:color .2s}
+th.sortable:hover{color:#00d2ff}
+.sort-icon{font-size:0.6em;margin-left:2px;opacity:0.35;display:inline-block;width:12px;text-align:center;transition:all .2s}
+.sort-icon.asc,.sort-icon.desc{opacity:1;color:#00d2ff}
+.filter-icon-header{cursor:pointer;font-size:0.62em;margin-left:3px;opacity:0.4;transition:all .2s;display:inline-block;vertical-align:middle}
+.filter-icon-header:hover{opacity:0.85;color:#00d2ff}
+.filter-icon-header.active{opacity:1;color:#f778ba}
+
+/* Filter Dropdown */
+.filter-dropdown{display:flex;flex-direction:column;position:fixed;background:#16213e;border:1px solid #00d2ff;border-radius:10px;z-index:9999;min-width:180px;max-width:340px;max-height:300px;overflow:hidden;box-shadow:0 14px 36px rgba(0,0,0,0.65);font-size:0.82em;opacity:0;transform:translateY(-6px);pointer-events:none;transition:opacity .18s ease,transform .18s ease}
+.filter-dropdown.show{opacity:1;transform:translateY(0);pointer-events:auto}
+.filter-dropdown .dd-header{padding:8px 12px;color:#00d2ff;font-weight:700;font-size:0.85em;border-bottom:1px solid rgba(255,255,255,0.08);flex-shrink:0}
+.filter-dropdown .dd-search{padding:6px 8px;flex-shrink:0}
+.filter-dropdown .dd-search input{width:100%;padding:7px 10px;border-radius:6px;border:1px solid rgba(255,255,255,0.12);background:rgba(255,255,255,0.05);color:#fff;font-size:0.82em;outline:none;transition:.2s}
+.filter-dropdown .dd-search input:focus{border-color:#00d2ff;box-shadow:0 0 8px rgba(0,210,255,0.15)}
+.filter-dropdown .dd-options{flex:1;overflow-y:auto;max-height:200px;padding:2px 0}
+.filter-dropdown .dd-options label{display:flex;align-items:center;padding:5px 12px;cursor:pointer;font-size:0.8em;color:#c9d1d9;transition:.12s;white-space:nowrap}
+.filter-dropdown .dd-options label:hover{background:rgba(0,210,255,0.08)}
+.filter-dropdown .dd-options input[type="checkbox"]{margin-right:8px;accent-color:#00d2ff;flex-shrink:0}
+.filter-dropdown .dd-actions{display:flex;gap:4px;padding:7px 8px;border-top:1px solid rgba(255,255,255,0.08);flex-shrink:0}
+.filter-dropdown .dd-actions button{flex:1;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);color:#c9d1d9;padding:6px 8px;border-radius:6px;cursor:pointer;font-size:0.76em;transition:.2s}
+.filter-dropdown .dd-actions button:hover{background:rgba(0,210,255,0.12);border-color:#00d2ff}
+.filter-dropdown .dd-actions button.clear-btn:hover{background:rgba(255,100,100,0.15);border-color:#f778ba}
 </style>
 </head>
 <body>
@@ -128,7 +153,19 @@ tbody tr:nth-child(even):hover{background:rgba(0,210,255,0.06)}
 <div class="table-container">
 <table id="gameTable">
 <thead>
-<tr><th>#</th><th>游戏名称<br><small style="color:#8b949e">点击跳转 Steam</small></th><th>类型</th><th>玩法</th><th>评分</th><th>推荐</th><th>存储(GB)</th><th>联机</th><th>平台</th><th>画风</th><th>难度</th></tr>
+<tr>
+<th class="sortable" onclick="sortTable(0)"># <span class="sort-icon" data-col="0">⇅</span></th>
+<th class="sortable" onclick="sortTable(1)">游戏名称<span class="sort-icon" data-col="1">⇅</span><br><small style="color:#8b949e">点击跳转 Steam</small></th>
+<th class="sortable" onclick="sortTable(2)">类型<span class="sort-icon" data-col="2">⇅</span> <span class="filter-icon-header" data-col="2" onclick="event.stopPropagation();toggleFilterDropdown(2,this)" title="筛选类型">▼</span></th>
+<th class="sortable" onclick="sortTable(3)">玩法<span class="sort-icon" data-col="3">⇅</span> <span class="filter-icon-header" data-col="3" onclick="event.stopPropagation();toggleFilterDropdown(3,this)" title="筛选玩法">▼</span></th>
+<th class="sortable" onclick="sortTable(4)">评分<span class="sort-icon" data-col="4">⇅</span> <span class="filter-icon-header" data-col="4" onclick="event.stopPropagation();toggleFilterDropdown(4,this)" title="筛选评分">▼</span></th>
+<th class="sortable" onclick="sortTable(5)">推荐<span class="sort-icon" data-col="5">⇅</span></th>
+<th class="sortable" onclick="sortTable(6)">存储(GB)<span class="sort-icon" data-col="6">⇅</span></th>
+<th class="sortable" onclick="sortTable(7)">联机<span class="sort-icon" data-col="7">⇅</span></th>
+<th class="sortable" onclick="sortTable(8)">平台<span class="sort-icon" data-col="8">⇅</span></th>
+<th class="sortable" onclick="sortTable(9)">画风<span class="sort-icon" data-col="9">⇅</span></th>
+<th class="sortable" onclick="sortTable(10)">难度<span class="sort-icon" data-col="10">⇅</span></th>
+</tr>
 </thead>
 <tbody>
 <tr data-online="0" data-mac="0" data-linux="0" data-r90="0" data-hard="0" data-easy="0">
@@ -3038,8 +3075,59 @@ tbody tr:nth-child(even):hover{background:rgba(0,210,255,0.06)}
 <div class="footer"><p>Made with Claude Code | 点击游戏名 → 跳转 Steam 商店 | 点击数据卡片 → 筛选游戏</p></div>
 
 <script>
-let activeFilter = 'all';
+var activeFilter = 'all';
+var sortState = { col: -1, dir: 'none' };
+var columnFilters = { 2: new Set(), 3: new Set(), 4: new Set() };
+var filterDropdown = null;
+var activeFilterColumn = -1;
+var originalRowOrder = [];
+// Pre-cached unique values per filter column (built once on init)
+var cachedFilterValues = { 2: [], 3: [], 4: [] };
 
+// ========== Init ==========
+(function init() {
+    document.querySelector('[data-filter="all"]').classList.add('active');
+    var tbody = document.querySelector('#gameTable tbody');
+    var allRows = tbody.querySelectorAll('tr');
+    originalRowOrder = Array.prototype.slice.call(allRows);
+
+    // Pre-cache filter values so we never re-query the DOM
+    buildFilterCache(allRows);
+    createFilterDropdown();
+
+    window.addEventListener('scroll', function() {
+        if (filterDropdown.classList.contains('show')) {
+            filterDropdown.classList.remove('show');
+            activeFilterColumn = -1;
+        }
+    }, true);
+})();
+
+function buildFilterCache(allRows) {
+    var genreSet = new Set();
+    var descSet = new Set();
+    var ratingSet = new Set();
+
+    Array.prototype.forEach.call(allRows, function(row) {
+        // 类型 — split combined tags like "射击/动作"
+        var gc = row.querySelector('.col-genre');
+        if (gc) {
+            gc.textContent.split('/').forEach(function(t) { genreSet.add(t.trim()); });
+        }
+        // 玩法 — full description
+        var gp = row.querySelector('.col-gameplay');
+        if (gp) descSet.add(gp.textContent.trim());
+        // 评分
+        var rt = row.querySelector('.col-rating');
+        if (rt) ratingSet.add(rt.textContent.trim());
+    });
+
+    cachedFilterValues[2] = Array.prototype.slice.call(genreSet).sort();
+    cachedFilterValues[3] = Array.prototype.slice.call(descSet).sort();
+    cachedFilterValues[4] = Array.prototype.slice.call(ratingSet).sort(function(a, b) { return parseInt(b) - parseInt(a); });
+}
+
+// ========== Stat Card Filter ==========
 function filterBy(filter, cardEl) {
     if (activeFilter === filter && filter !== 'all') {
         filter = 'all';
@@ -3047,14 +3135,12 @@ function filterBy(filter, cardEl) {
     }
     activeFilter = filter;
 
-    // Update active card
-    document.querySelectorAll('.stat-card').forEach(c => c.classList.remove('active'));
-    const targetCard = document.querySelector('[data-filter="' + filter + '"]');
+    document.querySelectorAll('.stat-card').forEach(function(c) { c.classList.remove('active'); });
+    var targetCard = document.querySelector('[data-filter="' + filter + '"]');
     if (targetCard) targetCard.classList.add('active');
 
-    // Update filter bar
-    const bar = document.getElementById('filterBar');
-    const labels = {'all':'全部游戏','online':'支持联机','mac':'支持 Mac','linux':'支持 Linux','r90':'评分 90%+','hard':'极难游戏','easy':'休闲简单'};
+    var bar = document.getElementById('filterBar');
+    var labels = {'all':'全部游戏','online':'支持联机','mac':'支持 Mac','linux':'支持 Linux','r90':'评分 90%+','hard':'极难游戏','easy':'休闲简单'};
     document.getElementById('filterLabel').textContent = labels[filter] || filter;
     if (filter === 'all') bar.classList.remove('show');
     else bar.classList.add('show');
@@ -3062,23 +3148,44 @@ function filterBy(filter, cardEl) {
     applyAllFilters();
 }
 
+// ========== Combined Filter Logic ==========
 function applyAllFilters() {
-    const query = document.getElementById('search').value.toLowerCase();
-    const rows = document.querySelectorAll('#gameTable tbody tr');
-    let count = 0;
+    var query = document.getElementById('search').value.toLowerCase();
+    var rows = document.querySelectorAll('#gameTable tbody tr');
+    var count = 0;
 
-    rows.forEach(row => {
-        let show = true;
+    // Pre-extract column filter arrays once (avoid repeated Array.from on every row)
+    var genreFilters = columnFilters[2].size > 0 ? Array.prototype.slice.call(columnFilters[2]) : null;
+    var gpFilters = columnFilters[3].size > 0 ? columnFilters[3] : null;
+    var ratingFilters = columnFilters[4].size > 0 ? columnFilters[4] : null;
 
-        // Stat filter
+    Array.prototype.forEach.call(rows, function(row) {
+        var show = true;
+
+        // Stat card filter
         if (activeFilter !== 'all') {
-            const attr = 'data-' + activeFilter;
-            show = row.getAttribute(attr) === '1';
+            show = row.getAttribute('data-' + activeFilter) === '1';
         }
 
-        // Search filter
+        // Column filter: 类型 — match any selected genre tag (substring match)
+        if (show && genreFilters) {
+            var genreText = row.querySelector('.col-genre').textContent;
+            show = genreFilters.some(function(v) { return genreText.indexOf(v) !== -1; });
+        }
+
+        // Column filter: 玩法 — exact match
+        if (show && gpFilters) {
+            show = gpFilters.has(row.querySelector('.col-gameplay').textContent.trim());
+        }
+
+        // Column filter: 评分 — exact match
+        if (show && ratingFilters) {
+            show = ratingFilters.has(row.querySelector('.col-rating').textContent.trim());
+        }
+
+        // Text search
         if (show && query) {
-            show = row.textContent.toLowerCase().includes(query);
+            show = row.textContent.toLowerCase().indexOf(query) !== -1;
         }
 
         row.style.display = show ? '' : 'none';
@@ -3088,8 +3195,201 @@ function applyAllFilters() {
     document.getElementById('resultCount').innerHTML = '共显示 <strong>' + count + '</strong> 个游戏' + (count < 223 ? '（已筛选）' : '');
 }
 
-// Init: mark "all" as active
-document.querySelector('[data-filter="all"]').classList.add('active');
+// ========== Sorting ==========
+function sortTable(colIndex) {
+    if (sortState.col === colIndex) {
+        if (sortState.dir === 'asc') sortState.dir = 'desc';
+        else if (sortState.dir === 'desc') { sortState.col = -1; sortState.dir = 'none'; }
+    } else {
+        sortState.col = colIndex;
+        sortState.dir = 'asc';
+    }
+
+    updateSortIndicators();
+
+    var tbody = document.querySelector('#gameTable tbody');
+    var rows = Array.prototype.slice.call(tbody.querySelectorAll('tr'));
+
+    if (sortState.col === -1) {
+        rows.sort(function(a, b) { return originalRowOrder.indexOf(a) - originalRowOrder.indexOf(b); });
+    } else {
+        rows.sort(function(a, b) {
+            var aVal = getSortValue(a, sortState.col);
+            var bVal = getSortValue(b, sortState.col);
+            var cmp = compareValues(aVal, bVal, sortState.col);
+            return sortState.dir === 'asc' ? cmp : -cmp;
+        });
+    }
+
+    // Use DocumentFragment for single reflow
+    var frag = document.createDocumentFragment();
+    rows.forEach(function(row) { frag.appendChild(row); });
+    tbody.appendChild(frag);
+    applyAllFilters();
+}
+
+function getSortValue(row, colIndex) {
+    var cells = row.querySelectorAll('td');
+    if (!cells[colIndex]) return '';
+    if (colIndex === 5) return cells[colIndex].textContent.trim().length; // star count
+    return cells[colIndex].textContent.trim();
+}
+
+function compareValues(a, b, colIndex) {
+    if (colIndex === 0) return parseInt(a) - parseInt(b);
+    if (colIndex === 4) return parseInt(a) - parseInt(b);
+    if (colIndex === 5) return a - b;
+    if (colIndex === 6) {
+        var na = a.indexOf('+') !== -1 ? parseFloat(a) + 0.5 : parseFloat(a);
+        var nb = b.indexOf('+') !== -1 ? parseFloat(b) + 0.5 : parseFloat(b);
+        return na - nb;
+    }
+    if (colIndex === 10) {
+        var diffOrder = {'极简单':1,'简单':2,'中等':3,'偏难':4,'困难':5,'极难':6};
+        return (diffOrder[a] || 99) - (diffOrder[b] || 99);
+    }
+    return a.localeCompare(b, 'zh-CN');
+}
+
+function updateSortIndicators() {
+    document.querySelectorAll('#gameTable thead .sort-icon').forEach(function(icon) {
+        icon.className = 'sort-icon';
+        icon.textContent = '⇅';
+    });
+    if (sortState.col >= 0) {
+        var icon = document.querySelector('#gameTable thead .sort-icon[data-col="' + sortState.col + '"]');
+        if (icon) {
+            icon.classList.add(sortState.dir);
+            icon.textContent = sortState.dir === 'asc' ? '▲' : '▼';
+        }
+    }
+}
+
+// ========== Column Filter Dropdown ==========
+function createFilterDropdown() {
+    filterDropdown = document.createElement('div');
+    filterDropdown.className = 'filter-dropdown';
+    filterDropdown.id = 'filterDropdown';
+    document.body.appendChild(filterDropdown);
+
+    document.addEventListener('click', function(e) {
+        if (filterDropdown.classList.contains('show') &&
+            !filterDropdown.contains(e.target) &&
+            !e.target.closest('.filter-icon-header')) {
+            filterDropdown.classList.remove('show');
+            activeFilterColumn = -1;
+        }
+    });
+}
+
+function toggleFilterDropdown(colIndex, iconEl) {
+    if (activeFilterColumn === colIndex && filterDropdown.classList.contains('show')) {
+        filterDropdown.classList.remove('show');
+        activeFilterColumn = -1;
+        return;
+    }
+
+    activeFilterColumn = colIndex;
+    renderFilterDropdown(colIndex);  // uses cached values, no DOM crawl
+
+    var rect = iconEl.getBoundingClientRect();
+    filterDropdown.style.left = Math.min(rect.left, window.innerWidth - 350) + 'px';
+    filterDropdown.style.top = Math.min(rect.bottom + 4, window.innerHeight - 310) + 'px';
+    filterDropdown.classList.add('show');
+}
+
+function renderFilterDropdown(colIndex) {
+    var titles = {2:'类型', 3:'玩法', 4:'评分'};
+    var title = titles[colIndex] || '';
+    var values = cachedFilterValues[colIndex];  // pre-cached — no DOM query
+    var selectedSet = columnFilters[colIndex];
+
+    var html = '<div class="dd-header">筛选：' + title + '</div>';
+
+    if (values.length > 30) {
+        html += '<div class="dd-search"><input type="text" id="ddSearchInput" placeholder="搜索' + title + '..."></div>';
+    }
+
+    html += '<div class="dd-options">';
+    for (var i = 0; i < values.length; i++) {
+        var v = values[i];
+        var checked = selectedSet.has(v) ? ' checked' : '';
+        html += '<label><input type="checkbox" value="' + escHtml(v) + '"' + checked + '>' + escHtml(v) + '</label>';
+    }
+    html += '</div>';
+
+    html += '<div class="dd-actions">';
+    html += '<button id="ddSelectAll">全选</button>';
+    html += '<button class="clear-btn" id="ddClear">清除</button>';
+    html += '</div>';
+
+    filterDropdown.innerHTML = html;
+
+    // --- event binding ---
+    var checkboxes = filterDropdown.querySelectorAll('.dd-options input[type="checkbox"]');
+    for (var ci = 0; ci < checkboxes.length; ci++) {
+        checkboxes[ci].addEventListener('change', onCheckboxChange(colIndex));
+    }
+
+    filterDropdown.querySelector('#ddSelectAll').addEventListener('click', function() {
+        var cbs = filterDropdown.querySelectorAll('.dd-options input[type="checkbox"]');
+        for (var j = 0; j < cbs.length; j++) { cbs[j].checked = true; }
+        // Batch update: clear + add all at once
+        columnFilters[colIndex].clear();
+        for (var k = 0; k < values.length; k++) { columnFilters[colIndex].add(values[k]); }
+        updateFilterIcons();
+        applyAllFilters();
+    });
+
+    filterDropdown.querySelector('#ddClear').addEventListener('click', function() {
+        var cbs = filterDropdown.querySelectorAll('.dd-options input[type="checkbox"]');
+        for (var j = 0; j < cbs.length; j++) { cbs[j].checked = false; }
+        columnFilters[colIndex].clear();
+        updateFilterIcons();
+        applyAllFilters();
+        filterDropdown.classList.remove('show');
+        activeFilterColumn = -1;
+    });
+
+    var searchInput = filterDropdown.querySelector('#ddSearchInput');
+    if (searchInput) {
+        searchInput.addEventListener('input', function() {
+            var q = this.value.toLowerCase();
+            var labels = filterDropdown.querySelectorAll('.dd-options label');
+            for (var li = 0; li < labels.length; li++) {
+                labels[li].style.display = labels[li].textContent.toLowerCase().indexOf(q) !== -1 ? '' : 'none';
+            }
+        });
+    }
+
+    filterDropdown.querySelector('.dd-options').scrollTop = 0;
+}
+
+// Closure factory so each checkbox gets its own colIndex binding
+function onCheckboxChange(colIndex) {
+    return function() {
+        if (this.checked) columnFilters[colIndex].add(this.value);
+        else columnFilters[colIndex].delete(this.value);
+        updateFilterIcons();
+        applyAllFilters();
+    };
+}
+
+function escHtml(s) {
+    return s.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+function updateFilterIcons() {
+    var icons = document.querySelectorAll('.filter-icon-header');
+    for (var i = 0; i < icons.length; i++) {
+        var col = parseInt(icons[i].getAttribute('data-col'));
+        if (columnFilters[col] && columnFilters[col].size > 0) {
+            icons[i].classList.add('active');
+        } else {
+            icons[i].classList.remove('active');
+        }
+    }
+}
 </script>
 </body>
 </html>
